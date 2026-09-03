@@ -79,7 +79,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      game_visibility: { Args: { slug: string }; Returns: string }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
