@@ -1,5 +1,8 @@
 {
-  "brand": { "name": "GameForge AI", "version": "GameForge AI V1" },
+  "brand": {
+    "name": "GameForge AI",
+    "version": "GameForge AI V1"
+  },
   "nav": {
     "howItWorks": "Como funciona",
     "games": "Jogos",
@@ -137,7 +140,11 @@
     "nameRequired": "Informe um nome para o jogo.",
     "applied": "Alterações aplicadas ao jogo."
   },
-  "difficulty": { "easy": "Fácil", "normal": "Normal", "hard": "Difícil" },
+  "difficulty": {
+    "easy": "Fácil",
+    "normal": "Normal",
+    "hard": "Difícil"
+  },
   "themes": {
     "forest": "Floresta",
     "space": "Espaço",
@@ -186,7 +193,10 @@
     "notFound": "Jogo não encontrado.",
     "private": "Este jogo é privado."
   },
-  "badge": { "label": "Feito com GameForge AI", "close": "Ocultar selo" },
+  "badge": {
+    "label": "Feito com GameForge AI",
+    "close": "Ocultar selo"
+  },
   "settings": {
     "title": "Configurações",
     "appearance": "Aparência",
@@ -226,5 +236,43 @@
     "close": "Fechar",
     "loading": "Carregando...",
     "signInRequired": "Entre para criar e salvar jogos."
+  },
+  "questions": {
+    "title": "Alguns detalhes rápidos",
+    "subtitle": "Isso ajuda o GameForge a criar o jogo certo.",
+    "theme": "Qual ambiente você quer?",
+    "difficulty": "Qual a dificuldade?",
+    "coins": "Quantas moedas?",
+    "enemies": "Quantos inimigos?",
+    "obstacles": "Quantos obstáculos?",
+    "waves": "Quantas ondas?",
+    "levels": "Quantos níveis?",
+    "custom": "Personalizado",
+    "back": "Voltar",
+    "continue": "Continuar",
+    "generate": "Gerar",
+    "skip": "Usar padrões",
+    "step": "Pergunta {current} de {total}",
+    "invalid": "Escolha um valor válido."
+  },
+  "feedback": {
+    "title": "Enviar Feedback",
+    "type": "Tipo de Feedback",
+    "bug": "Bug",
+    "suggestion": "Sugestão",
+    "problem": "Problema",
+    "other": "Outro",
+    "message": "Sua mensagem",
+    "messagePlaceholder": "Conte o que aconteceu ou o que você gostaria de ver...",
+    "rating": "Avaliação (opcional)",
+    "send": "Enviar Feedback",
+    "intro": "Seu feedback nos ajuda a melhorar o GameForge AI.",
+    "success": "Obrigado! Seu feedback foi recebido.",
+    "empty": "Escreva uma mensagem.",
+    "error": "Não foi possível enviar seu feedback. Tente novamente."
+  },
+  "controls": {
+    "move": "Mover",
+    "shoot": "Atirar"
   }
 }

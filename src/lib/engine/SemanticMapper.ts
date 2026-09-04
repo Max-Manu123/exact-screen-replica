@@ -1,6 +1,6 @@
 import type { Difficulty, GameConfig, GameType, Theme } from "./types";
 
-const THEME_HINTS: Record<Theme, string[]> = {
+export const THEME_HINTS: Record<Theme, string[]> = {
   forest: ["forest", "jungle", "wood", "tree", "nature", "floresta", "selva", "arvore", "mata"],
   space: ["space", "galaxy", "star", "alien", "planet", "spaceship", "cosmic", "espaco", "galaxia", "nave", "planeta"],
   city: ["city", "street", "urban", "town", "rooftop", "cidade", "rua", "urbano", "predio"],
@@ -8,7 +8,7 @@ const THEME_HINTS: Record<Theme, string[]> = {
   ice: ["ice", "snow", "frozen", "winter", "arctic", "gelo", "neve", "congelado", "inverno", "artico"],
 };
 
-const DIFFICULTY_HINTS: Record<Difficulty, string[]> = {
+export const DIFFICULTY_HINTS: Record<Difficulty, string[]> = {
   easy: ["easy", "simple", "casual", "relaxing", "kids", "facil", "simples", "tranquilo", "criancas"],
   normal: ["normal", "balanced", "medium", "equilibrado", "medio"],
   hard: ["hard", "difficult", "hardcore", "challenging", "insane", "brutal", "dificil", "desafiador"],
@@ -20,7 +20,7 @@ const DEFAULT_THEME: Record<GameType, Theme> = {
   shooter: "space",
 };
 
-function normalize(text: string): string {
+export function normalize(text: string): string {
   return (text ?? "")
     .toLowerCase()
     .normalize("NFD")
