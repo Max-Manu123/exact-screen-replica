@@ -1,4 +1,5 @@
 import { detectGameType } from "./GameTypeDetector";
+import { applyAnswers, buildQuestions, type Answers, type Question } from "./QuestionEngine";
 import { designLevel } from "./LevelDesignEngine";
 import { mapPrompt, suggestName } from "./SemanticMapper";
 import type { GameConfig, GameHooks, GameType } from "./types";
@@ -31,11 +32,27 @@ export interface GenerationResult {
   prompt: string;
 }
 
+/** Analyzes a prompt without generating: used by the smart question step. */
+export function analyzePrompt(prompt: string): {
+  type: GameType;
+  mapped: ReturnType<typeof mapPrompt>;
+  questions: Question[];
+} {
+  const clean = (prompt ?? "").trim();
+  if (clean.length === 0) throw new GenerationError("empty_prompt");
+  if (clean.length < 12) throw new GenerationError("short_prompt");
+  const detection = detectGameType(clean);
+  if (!detection.type) throw new GenerationError("unknown_type");
+  const mapped = mapPrompt(clean, detection.type);
+  return { type: detection.type, mapped, questions: buildQuestions(clean, mapped) };
+}
+
 /** Runs the real generation pipeline. `onStep` reports the completed step index. */
 export async function generateGame(
   prompt: string,
   onStep?: (stepIndex: number) => void,
   delayMs = 320,
+  answers?: Answers,
 ): Promise<GenerationResult> {
   const clean = (prompt ?? "").trim();
   const wait = () => new Promise((resolve) => setTimeout(resolve, delayMs));
@@ -53,8 +70,8 @@ export async function generateGame(
   onStep?.(1);
   await wait();
 
-  // 3. Semantic mapping → structured configuration
-  const mapped = mapPrompt(clean, detection.type);
+  // 3. Semantic mapping (+ answers from the question step) → structured configuration
+  const mapped = applyAnswers(mapPrompt(clean, detection.type), answers);
   onStep?.(2);
   await wait();
 
@@ -92,4 +109,5 @@ export function createGameInstance(
   }
 }
 
-export { detectGameType, designLevel, mapPrompt };
+export { detectGameType, designLevel, mapPrompt, buildQuestions, applyAnswers };
+export type { Answers, Question };

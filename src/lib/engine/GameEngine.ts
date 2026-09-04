@@ -26,6 +26,8 @@ export abstract class GameEngine {
   protected width = 0;
   protected height = 0;
   protected elapsed = 0;
+  /** Virtual (touch) input, fed by on-screen controls. */
+  protected virtual = { x: 0, y: 0, shoot: false };
 
   private hooks: GameHooks;
   private rafId: number | null = null;
@@ -103,6 +105,7 @@ export abstract class GameEngine {
     this.setStatus("paused");
     this.keys.clear();
     this.pointer = null;
+    this.virtual = { x: 0, y: 0, shoot: false };
   }
 
   resume() {
@@ -139,6 +142,7 @@ export abstract class GameEngine {
     this.resizeObserver = null;
     this.keys.clear();
     this.pointer = null;
+    this.virtual = { x: 0, y: 0, shoot: false };
     this.scene.destroy();
   }
 
@@ -311,6 +315,7 @@ export abstract class GameEngine {
   private onBlur = () => {
     this.keys.clear();
     this.pointer = null;
+    this.virtual = { x: 0, y: 0, shoot: false };
   };
 
   private onPointer = (event: PointerEvent) => {
@@ -327,9 +332,19 @@ export abstract class GameEngine {
     this.pointer = null;
   };
 
+  /** On-screen control input: continuous while pressed, zeroed on release/cancel. */
+  setVirtualAxis(x: number, y: number) {
+    this.virtual.x = Number.isFinite(x) ? Math.max(-1, Math.min(1, x)) : 0;
+    this.virtual.y = Number.isFinite(y) ? Math.max(-1, Math.min(1, y)) : 0;
+  }
+
+  setVirtualShoot(active: boolean) {
+    this.virtual.shoot = active === true;
+  }
+
   protected axis(): { x: number; y: number } {
-    let x = 0;
-    let y = 0;
+    let x = this.virtual.x;
+    let y = this.virtual.y;
     if (this.keys.has("arrowleft") || this.keys.has("a")) x -= 1;
     if (this.keys.has("arrowright") || this.keys.has("d")) x += 1;
     if (this.keys.has("arrowup") || this.keys.has("w")) y -= 1;
@@ -338,7 +353,7 @@ export abstract class GameEngine {
   }
 
   protected shootPressed(): boolean {
-    return this.keys.has(" ") || this.keys.has("f") || this.pointer?.active === true;
+    return this.virtual.shoot || this.keys.has(" ") || this.keys.has("f") || this.pointer?.active === true;
   }
 
   private handleResize() {

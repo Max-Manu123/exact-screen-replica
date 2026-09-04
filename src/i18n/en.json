@@ -1,5 +1,8 @@
 {
-  "brand": { "name": "GameForge AI", "version": "GameForge AI V1" },
+  "brand": {
+    "name": "GameForge AI",
+    "version": "GameForge AI V1"
+  },
   "nav": {
     "howItWorks": "How it works",
     "games": "Games",
@@ -137,7 +140,11 @@
     "nameRequired": "Please enter a game name.",
     "applied": "Changes applied to the game."
   },
-  "difficulty": { "easy": "Easy", "normal": "Normal", "hard": "Hard" },
+  "difficulty": {
+    "easy": "Easy",
+    "normal": "Normal",
+    "hard": "Hard"
+  },
   "themes": {
     "forest": "Forest",
     "space": "Space",
@@ -186,7 +193,10 @@
     "notFound": "Game not found.",
     "private": "This game is private."
   },
-  "badge": { "label": "Made with GameForge AI", "close": "Hide badge" },
+  "badge": {
+    "label": "Made with GameForge AI",
+    "close": "Hide badge"
+  },
   "settings": {
     "title": "Settings",
     "appearance": "Appearance",
@@ -226,5 +236,43 @@
     "close": "Close",
     "loading": "Loading...",
     "signInRequired": "Sign in to create and save games."
+  },
+  "questions": {
+    "title": "A few quick details",
+    "subtitle": "This helps GameForge build the right game.",
+    "theme": "Which environment do you want?",
+    "difficulty": "What's the difficulty?",
+    "coins": "How many coins?",
+    "enemies": "How many enemies?",
+    "obstacles": "How many obstacles?",
+    "waves": "How many waves?",
+    "levels": "How many levels?",
+    "custom": "Custom",
+    "back": "Back",
+    "continue": "Continue",
+    "generate": "Generate",
+    "skip": "Use defaults",
+    "step": "Question {current} of {total}",
+    "invalid": "Please choose a valid value."
+  },
+  "feedback": {
+    "title": "Send Feedback",
+    "type": "Feedback Type",
+    "bug": "Bug",
+    "suggestion": "Suggestion",
+    "problem": "Problem",
+    "other": "Other",
+    "message": "Your message",
+    "messagePlaceholder": "Tell us what happened or what you'd like to see...",
+    "rating": "Rating (optional)",
+    "send": "Send Feedback",
+    "intro": "Your feedback helps us improve GameForge AI.",
+    "success": "Thanks! Your feedback has been received.",
+    "empty": "Please write a message.",
+    "error": "We couldn't send your feedback. Please try again."
+  },
+  "controls": {
+    "move": "Move",
+    "shoot": "Shoot"
   }
 }

@@ -142,24 +142,10 @@ export async function joinWaitlist(email: string, source: string): Promise<Waitl
   const clean = email.trim().toLowerCase();
   if (!isValidEmail(clean)) throw new Error("invalid_email");
   const { error } = await supabase.from("waitlist").insert({ email: clean, source });
-  if (error) {
-    if (error.code === "23505" || error.code === "23514" || error.code === "23000") return "duplicate";
-    // Unique violation on the lower(email) index.
-    if (error.code === "23505" || error.code === "23P01" || error.code === "23503") return "duplicate";
-    if (error.code === "23505") return "duplicate";
-    if (error.code === "23514") return "duplicate";
-    if (error.code === "23505") return "duplicate";
-    if (error.code === "23505") return "duplicate";
-    if (error.code === "23505") return "duplicate";
-    if (error.code === "23505") return "duplicate";
-    if (error.code === "23505") return "duplicate";
-    if (error.code === "23505") return "duplicate";
-    if (error.code === "23505") return "duplicate";
-    if (error.code === "23505") return "duplicate";
-    if (error.message?.toLowerCase().includes("duplicate")) return "duplicate";
-    throw error;
-  }
-  return "added";
+  if (!error) return "added";
+  // 23505 = unique violation on the lower(email) index → already on the list.
+  if (error.code === "23505" || error.message?.toLowerCase().includes("duplicate")) return "duplicate";
+  throw error;
 }
 
 export function publicUrlForSlug(slug: string): string {
