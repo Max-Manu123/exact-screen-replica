@@ -37,3 +37,20 @@ export function useAuth(): AuthState {
 export async function signOut() {
   await supabase.auth.signOut();
 }
+
+/** Only allow post-login returns to first-party app routes. */
+export function isSafeInternalPath(path: string | undefined | null): path is string {
+  if (!path) return false;
+  if (!path.startsWith("/") || path.startsWith("//") || path.includes("\\") || path.includes("://")) {
+    return false;
+  }
+  const pathname = (path.split("?")[0] ?? path).replace(/\/+$/, "") || "/";
+  return (
+    pathname === "/dashboard" ||
+    pathname === "/create" ||
+    pathname === "/games" ||
+    pathname === "/settings" ||
+    pathname === "/generating" ||
+    pathname.startsWith("/game/")
+  );
+}

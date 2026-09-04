@@ -8,9 +8,13 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
+import { Toaster } from "@/components/ui/sonner";
+import { AppearanceProvider } from "@/hooks/use-appearance";
+import { supabase } from "@/integrations/supabase/client";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { I18nProvider } from "../i18n";
 
 function NotFoundComponent() {
   return (
@@ -77,21 +81,34 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "GameForge AI — Turn Your Ideas Into Playable Games" },
+      {
+        name: "description",
+        content:
+          "Describe a game idea and GameForge AI builds a playable 2D browser game you can edit, save and share.",
+      },
+      { name: "author", content: "GameForge AI" },
+      { property: "og:title", content: "GameForge AI — Turn Your Ideas Into Playable Games" },
+      {
+        property: "og:description",
+        content: "Describe your idea, generate a playable 2D game, then edit and share it instantly.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      {
+        rel: "preconnect",
+        href: "https://fonts.gstatic.com",
+        crossOrigin: "anonymous" as const,
+      },
       {
         rel: "stylesheet",
-        href: appCss,
+        href: "https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..500&family=Space+Grotesk:wght@400..700&display=swap",
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
   }),
   shellComponent: RootShell,
@@ -114,13 +131,42 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+/** Completes OAuth returns that land on `/` with tokens in the hash or `code` query. */
+function OAuthReturnHandler() {
+  const router = useRouter();
+  useEffect(() => {
+    const hash = typeof window !== "undefined" ? window.location.hash : "";
+    const search = typeof window !== "undefined" ? window.location.search : "";
+    const isCallback =
+      hash.includes("access_token") ||
+      new URLSearchParams(search).has("code") ||
+      new URLSearchParams(hash.replace(/^#/, "")).has("access_token");
+
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event !== "SIGNED_IN" || !session) return;
+      const path = window.location.pathname;
+      if (path === "/" && isCallback) {
+        void router.navigate({ to: "/dashboard" });
+      }
+    });
+    return () => data.subscription.unsubscribe();
+  }, [router]);
+  return null;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <I18nProvider>
+        <AppearanceProvider>
+          <OAuthReturnHandler />
+          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+          <Outlet />
+          <Toaster position="bottom-right" richColors />
+        </AppearanceProvider>
+      </I18nProvider>
     </QueryClientProvider>
   );
 }

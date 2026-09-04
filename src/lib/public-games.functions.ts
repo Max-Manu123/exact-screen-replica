@@ -25,7 +25,7 @@ export type PublicGameResult =
  * exposing its configuration.
  */
 export const getPublicGame = createServerFn({ method: "GET" })
-  .inputValidator((input) => z.object({ slug: z.string().min(1).max(64) }).parse(input))
+  .validator((input) => z.object({ slug: z.string().min(1).max(64) }).parse(input))
   .handler(async ({ data }): Promise<PublicGameResult> => {
     const url = process.env["SUPABASE_URL"]!;
     const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;

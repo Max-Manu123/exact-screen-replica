@@ -44,6 +44,10 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  useEffect(() => {
+    document.documentElement.lang = language === "pt" ? "pt" : "en";
+  }, [language]);
+
   const setLanguage = useCallback((lang: Language) => {
     setLanguageState(lang);
     try {

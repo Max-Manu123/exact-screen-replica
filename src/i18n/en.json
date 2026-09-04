@@ -78,6 +78,7 @@
     "signIn": "Sign in",
     "signUp": "Sign up",
     "google": "Continue with Google",
+    "googleUnavailable": "Google sign-in is not available. Use email instead.",
     "toSignUp": "No account yet? Sign up",
     "toSignIn": "Already have an account? Sign in",
     "signedUp": "Account created. You're signed in.",
@@ -104,11 +105,12 @@
   },
   "generating": {
     "title": "Building your game",
-    "step1": "Understanding your idea",
+    "step1": "Analyzing prompt",
     "step2": "Detecting game type",
-    "step3": "Creating game configuration",
+    "step3": "Creating configuration",
     "step4": "Designing level",
-    "step5": "Preparing game",
+    "step5": "Generating game",
+    "completed": "Completed",
     "error": "We couldn't create your game. Please try again.",
     "tryAgain": "Try again"
   },
@@ -138,6 +140,7 @@
     "levels": "Levels",
     "saveChanges": "Save changes",
     "nameRequired": "Please enter a game name.",
+    "apply": "Apply",
     "applied": "Changes applied to the game."
   },
   "difficulty": {
@@ -167,6 +170,7 @@
     "empty": "You haven't created any games yet.",
     "createFirst": "Create your first game",
     "play": "Play",
+    "edit": "Edit",
     "share": "Share",
     "delete": "Delete",
     "deleted": "Game deleted.",
@@ -191,7 +195,11 @@
     "ctaTitle": "Create your own game",
     "cta": "Create game with GameForge",
     "notFound": "Game not found.",
-    "private": "This game is private."
+    "private": "This game is private.",
+    "privateText": "The creator hasn't made this game public yet.",
+    "notFoundText": "This game link doesn't exist or has been removed.",
+    "ctaText": "Describe your idea and turn it into a playable 2D game in seconds.",
+    "loading": "Loading game…"
   },
   "badge": {
     "label": "Made with GameForge AI",

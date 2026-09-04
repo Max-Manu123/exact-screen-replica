@@ -78,6 +78,7 @@
     "signIn": "Entrar",
     "signUp": "Cadastrar",
     "google": "Continuar com o Google",
+    "googleUnavailable": "O login com Google não está disponível. Use e-mail.",
     "toSignUp": "Ainda não tem conta? Cadastre-se",
     "toSignIn": "Já tem uma conta? Entrar",
     "signedUp": "Conta criada. Você está conectado.",
@@ -104,11 +105,12 @@
   },
   "generating": {
     "title": "Construindo seu jogo",
-    "step1": "Entendendo sua ideia",
+    "step1": "Analisando o prompt",
     "step2": "Detectando o tipo de jogo",
-    "step3": "Criando a configuração do jogo",
+    "step3": "Criando a configuração",
     "step4": "Desenhando o nível",
-    "step5": "Preparando o jogo",
+    "step5": "Gerando o jogo",
+    "completed": "Concluído",
     "error": "Não conseguimos criar seu jogo. Tente novamente.",
     "tryAgain": "Tentar novamente"
   },
@@ -138,6 +140,7 @@
     "levels": "Níveis",
     "saveChanges": "Salvar alterações",
     "nameRequired": "Informe um nome para o jogo.",
+    "apply": "Aplicar",
     "applied": "Alterações aplicadas ao jogo."
   },
   "difficulty": {
@@ -167,6 +170,7 @@
     "empty": "Você ainda não criou nenhum jogo.",
     "createFirst": "Criar meu primeiro jogo",
     "play": "Jogar",
+    "edit": "Editar",
     "share": "Compartilhar",
     "delete": "Excluir",
     "deleted": "Jogo excluído.",
@@ -191,7 +195,11 @@
     "ctaTitle": "Crie seu próprio jogo",
     "cta": "Criar jogo com o GameForge",
     "notFound": "Jogo não encontrado.",
-    "private": "Este jogo é privado."
+    "private": "Este jogo é privado.",
+    "privateText": "O criador ainda não tornou este jogo público.",
+    "notFoundText": "Este link de jogo não existe ou foi removido.",
+    "ctaText": "Descreva sua ideia e transforme-a em um jogo 2D jogável em segundos.",
+    "loading": "Carregando jogo…"
   },
   "badge": {
     "label": "Feito com GameForge AI",

@@ -1,12 +1,18 @@
-import { useCallback, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 export type Appearance = "dark" | "light";
 
 const STORAGE_KEY = "gameforge.appearance";
 
+const AppearanceContext = createContext<{
+  appearance: Appearance;
+  setAppearance: (next: Appearance) => void;
+} | null>(null);
+
 function apply(appearance: Appearance) {
   const root = document.documentElement;
   root.classList.toggle("light", appearance === "light");
+  root.classList.toggle("dark", appearance === "dark");
   root.style.colorScheme = appearance;
 }
 
@@ -19,14 +25,7 @@ export function readStoredAppearance(): Appearance {
   }
 }
 
-/** Applies the stored appearance once after hydration. */
-export function useAppearanceEffect() {
-  useEffect(() => {
-    apply(readStoredAppearance());
-  }, []);
-}
-
-export function useAppearance(): { appearance: Appearance; setAppearance: (next: Appearance) => void } {
+export function AppearanceProvider({ children }: { children: React.ReactNode }) {
   const [appearance, setState] = useState<Appearance>("dark");
 
   useEffect(() => {
@@ -45,5 +44,19 @@ export function useAppearance(): { appearance: Appearance; setAppearance: (next:
     }
   }, []);
 
-  return { appearance, setAppearance };
+  const value = useMemo(() => ({ appearance, setAppearance }), [appearance, setAppearance]);
+  return <AppearanceContext.Provider value={value}>{children}</AppearanceContext.Provider>;
+}
+
+/** Applies the stored appearance once after hydration. */
+export function useAppearanceEffect() {
+  useEffect(() => {
+    apply(readStoredAppearance());
+  }, []);
+}
+
+export function useAppearance(): { appearance: Appearance; setAppearance: (next: Appearance) => void } {
+  const ctx = useContext(AppearanceContext);
+  if (!ctx) throw new Error("useAppearance must be used inside AppearanceProvider");
+  return ctx;
 }
