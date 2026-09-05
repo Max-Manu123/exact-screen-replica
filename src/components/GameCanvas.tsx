@@ -30,10 +30,30 @@ function useCoarsePointer(): boolean {
 export function GameCanvas({ config, className }: { config: GameConfig; className?: string }) {
   const { t } = useI18n();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
   const engineRef = useRef<GameEngine | null>(null);
   const [status, setStatus] = useState<GameStatus>("ready");
   const [stats, setStats] = useState<GameStats | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const coarse = useCoarsePointer();
+
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(document.fullscreenElement === wrapperRef.current);
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  const toggleFullscreen = useCallback(async () => {
+    const node = wrapperRef.current;
+    if (!node) return;
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await node.requestFullscreen();
+    } catch {
+      /* fullscreen may be blocked by the browser; keep playing inline */
+    }
+  }, []);
+
 
   useEffect(() => {
     const canvas = canvasRef.current;
