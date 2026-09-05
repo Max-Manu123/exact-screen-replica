@@ -127,12 +127,21 @@ export function GameCanvas({ config, className }: { config: GameConfig; classNam
         </span>
       </div>
 
-      <div className="relative w-full overflow-hidden rounded-xl border border-border bg-card shadow-panel">
+      <div
+        className={cn(
+          "relative w-full overflow-hidden rounded-xl border border-border bg-card shadow-panel",
+          isFullscreen && "min-h-0 flex-1",
+        )}
+      >
         <canvas
           ref={canvasRef}
-          className="block h-[52vh] max-h-[560px] min-h-[260px] w-full touch-none"
+          className={cn(
+            "block w-full touch-none",
+            isFullscreen ? "h-full" : "h-[52vh] max-h-[560px] min-h-[260px]",
+          )}
           aria-label={t("game.objective")}
         />
+
         {overlay && (
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/70 px-4 text-center backdrop-blur-sm">
             <p className="text-lg font-semibold text-foreground">{overlay}</p>
