@@ -261,16 +261,17 @@ export abstract class GameEngine {
   private resetGame() {
     this.elapsed = 0;
     this.stats = {
-      ...this.stats,
       score: 0,
       coins: 0,
-      xp: 0,
+      coinsTotal: 0,
       level: 1,
       levels: this.config.levels,
       wave: 1,
       waves: this.config.waves,
+      xp: 0,
       lives: 1,
       time: 0,
+      objectiveKey: OBJECTIVE_KEY[this.config.type],
       objectiveState: "pending",
     };
     this.buildLevel();

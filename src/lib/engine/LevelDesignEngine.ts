@@ -16,10 +16,10 @@ function safeInt(value: unknown, fallback: number, min: number, max: number): nu
   return Math.min(max, Math.max(min, Math.round(numeric)));
 }
 
-const BASE: Record<Difficulty, { coins: number; enemies: number; obstacles: number; levels: number; waves: number; playerSpeed: number }> = {
-  easy: { coins: 8, enemies: 4, obstacles: 4, levels: 2, waves: 2, playerSpeed: 1.15 },
-  normal: { coins: 12, enemies: 6, obstacles: 7, levels: 3, waves: 3, playerSpeed: 1 },
-  hard: { coins: 18, enemies: 9, obstacles: 11, levels: 4, waves: 4, playerSpeed: 0.9 },
+const BASE: Record<Difficulty, { coins: number; enemies: number; obstacles: number; levels: number; waves: number; playerSpeed: number; obstacleSpeed: number }> = {
+  easy: { coins: 8, enemies: 4, obstacles: 4, levels: 2, waves: 2, playerSpeed: 1.15, obstacleSpeed: 0.8 },
+  normal: { coins: 12, enemies: 6, obstacles: 7, levels: 3, waves: 3, playerSpeed: 1, obstacleSpeed: 1 },
+  hard: { coins: 18, enemies: 9, obstacles: 11, levels: 4, waves: 4, playerSpeed: 0.9, obstacleSpeed: 1.3 },
 };
 
 /** Builds a fully validated level configuration. Never produces NaN/Infinity/impossible levels. */
@@ -28,17 +28,27 @@ export function designLevel(mapped: SemanticResult): GameConfig {
   const difficulty: Difficulty = DIFFICULTIES.includes(mapped.difficulty) ? mapped.difficulty : "normal";
   const base = BASE[difficulty];
 
+  // Handle enemy scope: if "total", distribute across waves; if "per_wave", use directly
+  let enemies = safeInt(mapped.enemies ?? base.enemies, base.enemies, LIMITS.enemies.min, LIMITS.enemies.max);
+  if (mapped.enemiesScope === "total" && mapped.enemies !== null) {
+    // Distribute total enemies across waves
+    const waves = base.waves;
+    enemies = Math.max(LIMITS.enemies.min, Math.min(LIMITS.enemies.max, Math.ceil(mapped.enemies / waves)));
+  }
+
   return {
     type,
     theme: THEMES.includes(mapped.theme) ? mapped.theme : "forest",
     difficulty,
     playerSpeed: base.playerSpeed,
     coins: safeInt(mapped.coins ?? base.coins, base.coins, LIMITS.coins.min, LIMITS.coins.max),
-    enemies: safeInt(mapped.enemies ?? base.enemies, base.enemies, LIMITS.enemies.min, LIMITS.enemies.max),
+    enemies,
     obstacles: safeInt(mapped.obstacles ?? base.obstacles, base.obstacles, LIMITS.obstacles.min, LIMITS.obstacles.max),
     levels: safeInt(base.levels, base.levels, LIMITS.levels.min, LIMITS.levels.max),
     waves: safeInt(base.waves, base.waves, LIMITS.waves.min, LIMITS.waves.max),
     weapon: "blaster",
+    obstacleSpeed: base.obstacleSpeed,
+    character: "astronaut",
   };
 }
 
@@ -63,5 +73,11 @@ export function sanitizeConfig(input: unknown): GameConfig {
     levels: safeInt(raw.levels, base.levels, LIMITS.levels.min, LIMITS.levels.max),
     waves: safeInt(raw.waves, base.waves, LIMITS.waves.min, LIMITS.waves.max),
     weapon: "blaster",
+    obstacleSpeed: typeof raw.obstacleSpeed === "number" && Number.isFinite(raw.obstacleSpeed) 
+      ? Math.min(2, Math.max(0.5, raw.obstacleSpeed)) 
+      : base.obstacleSpeed,
+    character: ["astronaut", "ninja", "soldier", "robot"].includes(raw.character as string) 
+      ? (raw.character as GameConfig["character"]) 
+      : "astronaut",
   };
 }

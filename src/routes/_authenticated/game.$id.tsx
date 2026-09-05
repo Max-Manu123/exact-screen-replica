@@ -27,12 +27,14 @@ function ConfigSlider({
   value,
   min,
   max,
+  step,
   onChange,
 }: {
   label: string;
   value: number;
   min: number;
   max: number;
+  step?: number;
   onChange: (v: number) => void;
 }) {
   return (
@@ -45,6 +47,7 @@ function ConfigSlider({
         type="range"
         min={min}
         max={max}
+        step={step ?? 1}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
         className="w-full accent-primary"
@@ -225,22 +228,72 @@ function GamePreviewPage() {
               />
             )}
             {game.game_type === "shooter" && (
-              <ConfigSlider
-                label={t("editor.enemies")}
-                value={editConfig.enemies}
-                min={2}
-                max={20}
-                onChange={(v) => setEditConfig((c) => c ? { ...c, enemies: v } : c)}
-              />
+              <>
+                <ConfigSlider
+                  label={t("editor.enemies")}
+                  value={editConfig.enemies}
+                  min={2}
+                  max={20}
+                  onChange={(v) => setEditConfig((c) => c ? { ...c, enemies: v } : c)}
+                />
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-foreground">Character</p>
+                  <div className="flex flex-wrap gap-2">
+                    {["astronaut", "ninja", "soldier", "robot"].map((char) => (
+                      <button
+                        key={char}
+                        type="button"
+                        onClick={() => setEditConfig((c) => c ? { ...c, character: char as any } : c)}
+                        className={`rounded-full px-3 py-1 text-sm transition-colors ${
+                          editConfig.character === char
+                            ? "bg-primary text-primary-foreground"
+                            : "border border-border bg-card text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {char.charAt(0).toUpperCase() + char.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
             )}
             {game.game_type === "dodge" && (
-              <ConfigSlider
-                label={t("editor.obstacles")}
-                value={editConfig.obstacles}
-                min={2}
-                max={20}
-                onChange={(v) => setEditConfig((c) => c ? { ...c, obstacles: v } : c)}
-              />
+              <>
+                <ConfigSlider
+                  label={t("editor.obstacles")}
+                  value={editConfig.obstacles}
+                  min={2}
+                  max={20}
+                  onChange={(v) => setEditConfig((c) => c ? { ...c, obstacles: v } : c)}
+                />
+                <ConfigSlider
+                  label="Obstacle Speed"
+                  value={editConfig.obstacleSpeed}
+                  min={0.5}
+                  max={2}
+                  step={0.1}
+                  onChange={(v) => setEditConfig((c) => c ? { ...c, obstacleSpeed: v } : c)}
+                />
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-foreground">Character</p>
+                  <div className="flex flex-wrap gap-2">
+                    {["astronaut", "ninja", "soldier", "robot"].map((char) => (
+                      <button
+                        key={char}
+                        type="button"
+                        onClick={() => setEditConfig((c) => c ? { ...c, character: char as any } : c)}
+                        className={`rounded-full px-3 py-1 text-sm transition-colors ${
+                          editConfig.character === char
+                            ? "bg-primary text-primary-foreground"
+                            : "border border-border bg-card text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {char.charAt(0).toUpperCase() + char.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
             )}
             <ConfigSlider
               label={t("editor.levels")}

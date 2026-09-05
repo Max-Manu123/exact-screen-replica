@@ -3,7 +3,7 @@ import { LIMITS } from "./LevelDesignEngine";
 import type { Difficulty, GameType, Theme } from "./types";
 import { DIFFICULTIES, THEMES } from "./types";
 
-export type QuestionKey = "theme" | "difficulty" | "coins" | "enemies" | "obstacles";
+export type QuestionKey = "theme" | "difficulty" | "coins" | "enemies" | "obstacles" | "enemies_scope";
 
 export interface QuestionOption {
   value: string | number;
@@ -28,6 +28,7 @@ export interface Answers {
   coins?: number;
   enemies?: number;
   obstacles?: number;
+  enemies_scope?: "total" | "per_wave";
 }
 
 function mentions(text: string, hints: Record<string, string[]>): boolean {
@@ -46,6 +47,16 @@ const DIFFICULTY_QUESTION: Question = {
   titleKey: "questions.difficulty",
   kind: "option",
   options: DIFFICULTIES.map((difficulty) => ({ value: difficulty, labelKey: `difficulty.${difficulty}` })),
+};
+
+const ENEMIES_SCOPE_QUESTION: Question = {
+  key: "enemies_scope",
+  titleKey: "questions.enemiesScope",
+  kind: "option",
+  options: [
+    { value: "total", label: "Total no jogo" },
+    { value: "per_wave", label: "Por wave" },
+  ],
 };
 
 function countQuestion(key: "coins" | "enemies" | "obstacles", values: number[]): Question {
@@ -79,6 +90,11 @@ export function buildQuestions(prompt: string, mapped: SemanticResult): Question
   const typeQuestion = byType[mapped.type];
   if (typeQuestion) questions.push(typeQuestion);
 
+  // Ask for enemy scope if shooter has enemies but scope is ambiguous
+  if (mapped.type === "shooter" && mapped.enemies !== null && mapped.enemiesScope === null) {
+    questions.push(ENEMIES_SCOPE_QUESTION);
+  }
+
   return questions.slice(0, 3);
 }
 
@@ -100,6 +116,9 @@ export function applyAnswers(mapped: SemanticResult, answers: Answers | undefine
       const value = clamp(answers[key], key);
       if (value !== null) next[key] = value;
     }
+  }
+  if (answers.enemies_scope && (answers.enemies_scope === "total" || answers.enemies_scope === "per_wave")) {
+    next.enemiesScope = answers.enemies_scope;
   }
   return next;
 }

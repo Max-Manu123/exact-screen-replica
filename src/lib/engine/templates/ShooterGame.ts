@@ -11,6 +11,7 @@ export class ShooterGame extends GameEngine {
   protected setupLevel(): void {
     const size = 32;
     this.scene.player = Scene.entity(this.width / 2 - size / 2, this.height - size - 20, size, size, { hp: 3 });
+    // Reset health/lives at the start of each level
     this.stats.lives = 3;
     this.stats.wave = 1;
     this.stats.coinsTotal = this.config.enemies * this.config.waves;

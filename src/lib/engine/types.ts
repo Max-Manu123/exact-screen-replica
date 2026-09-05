@@ -19,9 +19,13 @@ export interface GameConfig {
   enemies: number;
   /** Dodge obstacle density. */
   obstacles: number;
+  /** Dodge obstacle speed multiplier (0.5 - 2.0). */
+  obstacleSpeed: number;
   levels: number;
   waves: number;
   weapon: "blaster";
+  /** Character type for visual representation. */
+  character: "astronaut" | "ninja" | "soldier" | "robot";
 }
 
 export type GameStatus = "ready" | "playing" | "paused" | "game_over" | "level_complete" | "completed";

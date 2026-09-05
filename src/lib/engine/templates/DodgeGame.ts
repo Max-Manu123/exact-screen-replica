@@ -44,7 +44,7 @@ export class DodgeGame extends GameEngine {
       this.spawnTimer = spawnInterval;
       const w = 22 + Math.random() * 46;
       const obstacle = Scene.entity(Math.random() * Math.max(1, this.width - w), -40, w, 18);
-      obstacle.vy = (140 + Math.random() * 90) * ramp;
+      obstacle.vy = (140 + Math.random() * 90) * ramp * this.config.obstacleSpeed;
       this.scene.obstacles.push(obstacle);
     }
 
