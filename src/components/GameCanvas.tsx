@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Pause, Play, RotateCcw } from "lucide-react";
+import { Maximize, Minimize, Pause, Play, RotateCcw } from "lucide-react";
+
 
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n";
