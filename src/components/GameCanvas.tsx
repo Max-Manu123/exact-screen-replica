@@ -87,7 +87,15 @@ export function GameCanvas({ config, className }: { config: GameConfig; classNam
   const objectiveKey = stats?.objectiveKey ?? "game.objectiveCoin";
 
   return (
-    <div className={cn("flex flex-col gap-3", className)}>
+    <div
+      ref={wrapperRef}
+      className={cn(
+        "flex flex-col gap-3",
+        isFullscreen && "h-screen w-screen justify-center bg-background p-4",
+        className,
+      )}
+    >
+
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
         <span>
           {t("game.score")}: <strong className="text-foreground">{stats?.score ?? 0}</strong>
