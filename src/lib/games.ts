@@ -99,7 +99,7 @@ export async function insertGame(draft: DraftGame): Promise<GameRecord> {
         name: draft.name.slice(0, 60),
         original_prompt: draft.original_prompt,
         game_type: draft.game_type,
-        game_config: draft.game_config as unknown as Record<string, unknown>,
+        game_config: draft.game_config as never,
         share_slug: slugify(draft.name),
         is_public: true,
       })
@@ -120,7 +120,12 @@ export async function updateGame(
   if (patch.game_config !== undefined) payload["game_config"] = patch.game_config;
   if (patch.is_public !== undefined) payload["is_public"] = patch.is_public;
 
-  const { data, error } = await supabase.from("games").update(payload).eq("id", id).select("*").single();
+  const { data, error } = await supabase
+    .from("games")
+    .update(payload as never)
+    .eq("id", id)
+    .select("*")
+    .single();
   if (error) throw error;
   return normalizeRow(data as Record<string, unknown>);
 }
