@@ -234,6 +234,8 @@
     "levelComplete": "Level complete",
     "completed": "You win!",
     "controlsHint": "Arrow keys / WASD to move. Space to shoot. Drag on touch screens.",
+    "fullscreen": "Fullscreen",
+    "exitFullscreen": "Exit fullscreen",
     "weapon": "Weapon"
   },
   "common": {

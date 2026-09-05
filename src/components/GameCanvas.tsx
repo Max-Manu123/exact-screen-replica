@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Pause, Play, RotateCcw } from "lucide-react";
+import { Maximize, Minimize, Pause, Play, RotateCcw } from "lucide-react";
+
 
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n";
@@ -29,10 +30,30 @@ function useCoarsePointer(): boolean {
 export function GameCanvas({ config, className }: { config: GameConfig; className?: string }) {
   const { t } = useI18n();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
   const engineRef = useRef<GameEngine | null>(null);
   const [status, setStatus] = useState<GameStatus>("ready");
   const [stats, setStats] = useState<GameStats | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const coarse = useCoarsePointer();
+
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(document.fullscreenElement === wrapperRef.current);
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  const toggleFullscreen = useCallback(async () => {
+    const node = wrapperRef.current;
+    if (!node) return;
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await node.requestFullscreen();
+    } catch {
+      /* fullscreen may be blocked by the browser; keep playing inline */
+    }
+  }, []);
+
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -66,7 +87,15 @@ export function GameCanvas({ config, className }: { config: GameConfig; classNam
   const objectiveKey = stats?.objectiveKey ?? "game.objectiveCoin";
 
   return (
-    <div className={cn("flex flex-col gap-3", className)}>
+    <div
+      ref={wrapperRef}
+      className={cn(
+        "flex flex-col gap-3",
+        isFullscreen && "h-screen w-screen justify-center bg-background p-4",
+        className,
+      )}
+    >
+
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
         <span>
           {t("game.score")}: <strong className="text-foreground">{stats?.score ?? 0}</strong>
@@ -98,12 +127,21 @@ export function GameCanvas({ config, className }: { config: GameConfig; classNam
         </span>
       </div>
 
-      <div className="relative w-full overflow-hidden rounded-xl border border-border bg-card shadow-panel">
+      <div
+        className={cn(
+          "relative w-full overflow-hidden rounded-xl border border-border bg-card shadow-panel",
+          isFullscreen && "min-h-0 flex-1",
+        )}
+      >
         <canvas
           ref={canvasRef}
-          className="block h-[52vh] max-h-[560px] min-h-[260px] w-full touch-none"
+          className={cn(
+            "block w-full touch-none",
+            isFullscreen ? "h-full" : "h-[52vh] max-h-[560px] min-h-[260px]",
+          )}
           aria-label={t("game.objective")}
         />
+
         {overlay && (
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/70 px-4 text-center backdrop-blur-sm">
             <p className="text-lg font-semibold text-foreground">{overlay}</p>
@@ -126,6 +164,18 @@ export function GameCanvas({ config, className }: { config: GameConfig; classNam
         <Button onClick={restart} variant="outline" size="sm">
           <RotateCcw className="mr-1 size-4" /> {t("preview.restart")}
         </Button>
+        <Button onClick={toggleFullscreen} variant="outline" size="sm">
+          {isFullscreen ? (
+            <>
+              <Minimize className="mr-1 size-4" /> {t("game.exitFullscreen")}
+            </>
+          ) : (
+            <>
+              <Maximize className="mr-1 size-4" /> {t("game.fullscreen")}
+            </>
+          )}
+        </Button>
+
         <span className="text-xs text-muted-foreground">{t("game.controlsHint")}</span>
       </div>
 

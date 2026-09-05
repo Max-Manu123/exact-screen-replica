@@ -234,6 +234,8 @@
     "levelComplete": "Nível concluído",
     "completed": "Você venceu!",
     "controlsHint": "Setas / WASD para mover. Espaço para atirar. Arraste em telas de toque.",
+    "fullscreen": "Tela cheia",
+    "exitFullscreen": "Sair da tela cheia",
     "weapon": "Arma"
   },
   "common": {
