@@ -99,7 +99,7 @@ export async function insertGame(draft: DraftGame): Promise<GameRecord> {
         name: draft.name.slice(0, 60),
         original_prompt: draft.original_prompt,
         game_type: draft.game_type,
-        game_config: draft.game_config as unknown as Record<string, unknown>,
+        game_config: draft.game_config as never,
         share_slug: slugify(draft.name),
         is_public: true,
       })
