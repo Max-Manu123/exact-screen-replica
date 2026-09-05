@@ -164,6 +164,18 @@ export function GameCanvas({ config, className }: { config: GameConfig; classNam
         <Button onClick={restart} variant="outline" size="sm">
           <RotateCcw className="mr-1 size-4" /> {t("preview.restart")}
         </Button>
+        <Button onClick={toggleFullscreen} variant="outline" size="sm">
+          {isFullscreen ? (
+            <>
+              <Minimize className="mr-1 size-4" /> {t("game.exitFullscreen")}
+            </>
+          ) : (
+            <>
+              <Maximize className="mr-1 size-4" /> {t("game.fullscreen")}
+            </>
+          )}
+        </Button>
+
         <span className="text-xs text-muted-foreground">{t("game.controlsHint")}</span>
       </div>
 
