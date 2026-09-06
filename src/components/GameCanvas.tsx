@@ -153,6 +153,14 @@ export function GameCanvas({ config, className }: { config: GameConfig; classNam
             <p className="text-xs text-muted-foreground">{t(OBJECTIVE_TEXT[objectiveKey] ?? objectiveKey)}</p>
           </div>
         )}
+
+        {coarse && (
+          <TouchControls 
+            engineRef={engineRef} 
+            showShoot={config.type === "shooter"}
+            canvasRef={canvasRef}
+          />
+        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -190,8 +198,6 @@ export function GameCanvas({ config, className }: { config: GameConfig; classNam
           <span className="text-xs text-muted-foreground">{t("game.controlsHint")}</span>
         )}
       </div>
-
-      {coarse && <TouchControls engineRef={engineRef} showShoot={config.type === "shooter"} />}
     </div>
   );
 }
@@ -199,14 +205,19 @@ export function GameCanvas({ config, className }: { config: GameConfig; classNam
 function TouchControls({
   engineRef,
   showShoot,
+  canvasRef,
 }: {
   engineRef: React.MutableRefObject<GameEngine | null>;
   showShoot: boolean;
+  canvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
 }) {
   const { t } = useI18n();
   const joystickRef = useRef<HTMLDivElement | null>(null);
-  const [joystickActive, setJoystickActive] = useState(false);
+  const joystickKnobRef = useRef<HTMLDivElement | null>(null);
+  const shootButtonRef = useRef<HTMLButtonElement | null>(null);
   const [joystickPosition, setJoystickPosition] = useState({ x: 0, y: 0 });
+  const joystickPointerId = useRef<number | null>(null);
+  const shootPointerId = useRef<number | null>(null);
 
   const handleJoystickMove = (clientX: number, clientY: number) => {
     if (!joystickRef.current) return;
@@ -231,21 +242,43 @@ function TouchControls({
 
   const handleJoystickStart = (event: React.PointerEvent) => {
     event.preventDefault();
-    setJoystickActive(true);
+    event.stopPropagation();
+    joystickPointerId.current = event.pointerId;
+    (event.target as HTMLElement).setPointerCapture(event.pointerId);
+    setJoystickPosition({ x: 0, y: 0 });
     handleJoystickMove(event.clientX, event.clientY);
   };
 
   const handleJoystickMoveEvent = (event: React.PointerEvent) => {
     event.preventDefault();
-    if (joystickActive) {
+    if (joystickPointerId.current === event.pointerId) {
       handleJoystickMove(event.clientX, event.clientY);
     }
   };
 
-  const handleJoystickEnd = () => {
-    setJoystickActive(false);
-    setJoystickPosition({ x: 0, y: 0 });
-    engineRef.current?.setVirtualAxis(0, 0);
+  const handleJoystickEnd = (event: React.PointerEvent) => {
+    event.preventDefault();
+    if (joystickPointerId.current === event.pointerId) {
+      joystickPointerId.current = null;
+      setJoystickPosition({ x: 0, y: 0 });
+      engineRef.current?.setVirtualAxis(0, 0);
+    }
+  };
+
+  const handleShootStart = (event: React.PointerEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    shootPointerId.current = event.pointerId;
+    (event.target as HTMLElement).setPointerCapture(event.pointerId);
+    engineRef.current?.setVirtualShoot(true);
+  };
+
+  const handleShootEnd = (event: React.PointerEvent) => {
+    event.preventDefault();
+    if (shootPointerId.current === event.pointerId) {
+      shootPointerId.current = null;
+      engineRef.current?.setVirtualShoot(false);
+    }
   };
 
   useEffect(() => {
@@ -257,46 +290,58 @@ function TouchControls({
   }, [engineRef]);
 
   return (
-    <div className="flex items-end justify-between gap-4 pt-1">
-      {/* Virtual Joystick */}
+    <>
+      {/* Virtual Joystick - positioned inside canvas */}
       <div
         ref={joystickRef}
-        className="relative size-32 select-none rounded-full border-2 border-border bg-card/80"
+        className="absolute bottom-4 left-4 z-10 select-none rounded-full border-2 border-border bg-card/80"
+        style={{ 
+          width: 'min(20vw, 120px)', 
+          height: 'min(20vw, 120px)',
+          maxWidth: '120px',
+          maxHeight: '120px'
+        }}
         onPointerDown={handleJoystickStart}
         onPointerMove={handleJoystickMoveEvent}
         onPointerUp={handleJoystickEnd}
         onPointerCancel={handleJoystickEnd}
-        onPointerLeave={handleJoystickEnd}
         onContextMenu={(event) => event.preventDefault()}
         aria-label={t("controls.move")}
       >
         {/* Joystick knob */}
         <div
-          className="absolute size-12 rounded-full bg-primary/50 transition-transform"
+          ref={joystickKnobRef}
+          className="absolute rounded-full bg-primary/50"
           style={{
             left: "50%",
             top: "50%",
+            width: '40%',
+            height: '40%',
             transform: `translate(calc(-50% + ${joystickPosition.x * 40}px), calc(-50% + ${joystickPosition.y * 40}px))`,
           }}
         />
       </div>
 
-      {/* Shoot button */}
+      {/* Shoot button - positioned inside canvas */}
       {showShoot && (
         <button
+          ref={shootButtonRef}
           type="button"
-          className="size-20 select-none rounded-full border border-primary bg-primary/20 text-sm font-semibold text-foreground active:bg-primary active:text-primary-foreground"
-          onPointerDown={(event) => {
-            event.preventDefault();
-            engineRef.current?.setVirtualShoot(true);
+          className="absolute bottom-4 right-4 z-10 select-none rounded-full border border-primary bg-primary/20 text-sm font-semibold text-foreground active:bg-primary active:text-primary-foreground"
+          style={{
+            width: 'min(18vw, 100px)',
+            height: 'min(18vw, 100px)',
+            maxWidth: '100px',
+            maxHeight: '100px'
           }}
-          onPointerUp={() => engineRef.current?.setVirtualShoot(false)}
-          onPointerCancel={() => engineRef.current?.setVirtualShoot(false)}
-          onPointerLeave={() => engineRef.current?.setVirtualShoot(false)}
+          onPointerDown={handleShootStart}
+          onPointerUp={handleShootEnd}
+          onPointerCancel={handleShootEnd}
+          onContextMenu={(event) => event.preventDefault()}
         >
           {t("controls.shoot")}
         </button>
       )}
-    </div>
+    </>
   );
 }
