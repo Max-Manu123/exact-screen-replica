@@ -236,7 +236,9 @@
     "controlsHint": "Setas / WASD para mover. Espaço para atirar. Arraste em telas de toque.",
     "fullscreen": "Tela cheia",
     "exitFullscreen": "Sair da tela cheia",
-    "weapon": "Arma"
+    "weapon": "Arma",
+    "pcHintShooter": "WASD ou Setas para mover • Botão esquerdo para atirar",
+    "pcHintMove": "WASD ou Setas para mover"
   },
   "common": {
     "saving": "Salvando...",

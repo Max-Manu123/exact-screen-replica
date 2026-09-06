@@ -7,6 +7,7 @@ import { useI18n } from "@/i18n";
 import { createGameInstance } from "@/lib/engine/pipeline";
 import type { GameConfig, GameStats, GameStatus } from "@/lib/engine/types";
 import type { GameEngine } from "@/lib/engine/GameEngine";
+import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
 const OBJECTIVE_TEXT: Record<string, string> = {
@@ -299,7 +300,7 @@ function TouchControls({
       {/* Virtual Joystick - positioned inside canvas */}
       <div
         ref={joystickRef}
-        className="absolute bottom-4 left-4 z-10 select-none rounded-full border-2 border-border bg-card/80"
+        className="absolute bottom-4 left-4 z-10 touch-none select-none rounded-full border-2 border-border bg-card/80"
         style={{ 
           width: 'min(20vw, 120px)', 
           height: 'min(20vw, 120px)',
@@ -332,7 +333,7 @@ function TouchControls({
         <button
           ref={shootButtonRef}
           type="button"
-          className="absolute bottom-4 right-4 z-10 select-none rounded-full border border-primary bg-primary/20 text-sm font-semibold text-foreground active:bg-primary active:text-primary-foreground"
+          className="absolute bottom-4 right-4 z-10 touch-none select-none rounded-full border border-primary bg-primary/20 text-sm font-semibold text-foreground active:bg-primary active:text-primary-foreground"
           style={{
             width: 'min(18vw, 100px)',
             height: 'min(18vw, 100px)',

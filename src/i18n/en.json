@@ -236,7 +236,9 @@
     "controlsHint": "Arrow keys / WASD to move. Space to shoot. Drag on touch screens.",
     "fullscreen": "Fullscreen",
     "exitFullscreen": "Exit fullscreen",
-    "weapon": "Weapon"
+    "weapon": "Weapon",
+    "pcHintShooter": "WASD or Arrow keys to move • Left click to shoot",
+    "pcHintMove": "WASD or Arrow keys to move"
   },
   "common": {
     "saving": "Saving...",
