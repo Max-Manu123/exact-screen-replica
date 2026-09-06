@@ -137,3 +137,37 @@ export function detectGameType(prompt: string): DetectionResult {
 
   return { type: best.type, scores, confidence: total > 0 ? best.score / total : 0 };
 }
+
+/**
+ * Genres users often ask for that V1 does not support yet. Only used when the
+ * supported-type detection above finds nothing, so a "shooter with a football
+ * as an obstacle" is still detected as a shooter.
+ */
+const UNSUPPORTED_KEYWORDS: Record<string, string[]> = {
+  football: ["football", "soccer", "futebol", "gol", "goals", "goal", "penalty", "penalti"],
+  racing: ["racing", "race", "car race", "corrida", "kart", "drift", "rally"],
+  platformer: ["platformer", "plataforma", "jump", "jumping", "mario", "pular", "salto"],
+  puzzle: ["puzzle", "quebra cabeca", "sudoku", "match 3", "tetris", "enigma"],
+  fighting: ["fighting", "fight game", "luta", "boxe", "boxing", "karate", "combate"],
+  rpg: ["rpg", "role playing", "quest", "dungeon", "masmorra"],
+  sports: ["basketball", "tennis", "volleyball", "basquete", "tenis", "golf", "baseball"],
+};
+
+/** Returns the unsupported genre key detected in a prompt, or null. */
+export function detectUnsupportedGenre(prompt: string): string | null {
+  const text = normalize(prompt ?? "");
+  if (!text) return null;
+  let best: { key: string; score: number } | null = null;
+  for (const key of Object.keys(UNSUPPORTED_KEYWORDS)) {
+    let score = 0;
+    for (const keyword of UNSUPPORTED_KEYWORDS[key]!) {
+      const needle = normalize(keyword);
+      if (!needle) continue;
+      const pattern = new RegExp(`(^|\\s)${needle}(\\s|$)`, "g");
+      const matches = text.match(pattern);
+      if (matches) score += matches.length;
+    }
+    if (score > 0 && (!best || score > best.score)) best = { key, score };
+  }
+  return best ? best.key : null;
+}

@@ -7,6 +7,7 @@ import { useI18n } from "@/i18n";
 import { createGameInstance } from "@/lib/engine/pipeline";
 import type { GameConfig, GameStats, GameStatus } from "@/lib/engine/types";
 import type { GameEngine } from "@/lib/engine/GameEngine";
+import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
 const OBJECTIVE_TEXT: Record<string, string> = {
@@ -48,11 +49,14 @@ export function GameCanvas({ config, className }: { config: GameConfig; classNam
     if (!node) return;
     try {
       if (document.fullscreenElement) await document.exitFullscreen();
-      else await node.requestFullscreen();
+      else {
+        await node.requestFullscreen();
+        track("fullscreen_used", { game_type: config.type });
+      }
     } catch {
       /* fullscreen may be blocked by the browser; keep playing inline */
     }
-  }, []);
+  }, [config.type]);
 
 
   useEffect(() => {
@@ -71,9 +75,13 @@ export function GameCanvas({ config, className }: { config: GameConfig; classNam
     // A new config rebuilds the game from template + config.
   }, [config]);
 
-  const play = useCallback(() => engineRef.current?.start(), []);
+  const play = useCallback(() => {
+    engineRef.current?.start();
+    track("game_played", { game_type: config.type });
+  }, [config.type]);
   const pause = useCallback(() => engineRef.current?.pause(), []);
   const restart = useCallback(() => engineRef.current?.restart(), []);
+
 
   const overlay = useMemo(() => {
     if (status === "ready") return t("game.ready");
@@ -189,14 +197,12 @@ export function GameCanvas({ config, className }: { config: GameConfig; classNam
           )}
         </Button>
 
-        {!coarse && config.type === "shooter" && (
+        {!coarse && (
           <span className="text-xs text-muted-foreground">
-            Coloque o mouse sobre o canvas e clique com o botão esquerdo para atirar
+            {config.type === "shooter" ? t("game.pcHintShooter") : t("game.pcHintMove")}
           </span>
         )}
-        {!coarse && config.type !== "shooter" && (
-          <span className="text-xs text-muted-foreground">{t("game.controlsHint")}</span>
-        )}
+
       </div>
     </div>
   );
@@ -294,7 +300,7 @@ function TouchControls({
       {/* Virtual Joystick - positioned inside canvas */}
       <div
         ref={joystickRef}
-        className="absolute bottom-4 left-4 z-10 select-none rounded-full border-2 border-border bg-card/80"
+        className="absolute bottom-4 left-4 z-10 touch-none select-none rounded-full border-2 border-border bg-card/80"
         style={{ 
           width: 'min(20vw, 120px)', 
           height: 'min(20vw, 120px)',
@@ -327,7 +333,7 @@ function TouchControls({
         <button
           ref={shootButtonRef}
           type="button"
-          className="absolute bottom-4 right-4 z-10 select-none rounded-full border border-primary bg-primary/20 text-sm font-semibold text-foreground active:bg-primary active:text-primary-foreground"
+          className="absolute bottom-4 right-4 z-10 touch-none select-none rounded-full border border-primary bg-primary/20 text-sm font-semibold text-foreground active:bg-primary active:text-primary-foreground"
           style={{
             width: 'min(18vw, 100px)',
             height: 'min(18vw, 100px)',

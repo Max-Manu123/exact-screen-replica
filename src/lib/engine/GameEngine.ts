@@ -79,10 +79,10 @@ export abstract class GameEngine {
     window.addEventListener("keydown", this.onKeyDown);
     window.addEventListener("keyup", this.onKeyUp);
     window.addEventListener("blur", this.onBlur);
-    this.canvas.addEventListener("pointerdown", this.onPointer);
-    this.canvas.addEventListener("pointermove", this.onPointer);
+    this.canvas.addEventListener("pointerdown", this.onPointerDown);
     this.canvas.addEventListener("pointerup", this.onPointerEnd);
-    this.canvas.addEventListener("pointerleave", this.onPointerEnd);
+    this.canvas.addEventListener("pointercancel", this.onPointerEnd);
+
     this.resetGame();
     this.render();
     this.emitStats();
@@ -140,10 +140,10 @@ export abstract class GameEngine {
     window.removeEventListener("keydown", this.onKeyDown);
     window.removeEventListener("keyup", this.onKeyUp);
     window.removeEventListener("blur", this.onBlur);
-    this.canvas.removeEventListener("pointerdown", this.onPointer);
-    this.canvas.removeEventListener("pointermove", this.onPointer);
+    this.canvas.removeEventListener("pointerdown", this.onPointerDown);
     this.canvas.removeEventListener("pointerup", this.onPointerEnd);
-    this.canvas.removeEventListener("pointerleave", this.onPointerEnd);
+    this.canvas.removeEventListener("pointercancel", this.onPointerEnd);
+
     this.resizeObserver?.disconnect();
     this.resizeObserver = null;
     this.keys.clear();
@@ -331,8 +331,13 @@ export abstract class GameEngine {
     this.virtual = { x: 0, y: 0, shoot: false };
   };
 
-  private onPointer = (event: PointerEvent) => {
-    if (event.type === "pointermove" && event.buttons === 0 && event.pointerType !== "mouse") return;
+  /**
+   * Desktop shooting only: a held left mouse button. Hovering or moving the
+   * mouse over the canvas never produces input, and the mouse never moves
+   * the player (keyboard / on-screen joystick do that).
+   */
+  private onPointerDown = (event: PointerEvent) => {
+    if (event.pointerType !== "mouse" || event.button !== 0) return;
     const rect = this.canvas.getBoundingClientRect();
     this.pointer = {
       x: ((event.clientX - rect.left) / rect.width) * this.width,
@@ -340,6 +345,7 @@ export abstract class GameEngine {
       active: true,
     };
   };
+
 
   private onPointerEnd = () => {
     this.pointer = null;

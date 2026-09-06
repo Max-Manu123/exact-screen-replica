@@ -84,14 +84,8 @@ export class ShooterGame extends GameEngine {
 
     const speed = speedFor(this.config);
     const axis = this.axis();
-    if (this.pointer?.active) {
-      const target = this.pointer.x - player.w / 2;
-      const diff = target - player.x;
-      if (Math.abs(diff) > 2) player.x += Math.sign(diff) * Math.min(Math.abs(diff), speed * dt);
-    } else {
-      player.x += axis.x * speed * dt;
-      player.y += axis.y * speed * 0.5 * dt;
-    }
+    player.x += axis.x * speed * dt;
+    player.y += axis.y * speed * 0.5 * dt;
     this.clampToBoard(player);
 
     // Update power-up timers
