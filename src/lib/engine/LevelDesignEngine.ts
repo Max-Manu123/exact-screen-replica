@@ -22,6 +22,23 @@ const BASE: Record<Difficulty, { coins: number; enemies: number; obstacles: numb
   hard: { coins: 18, enemies: 9, obstacles: 11, levels: 4, waves: 4, playerSpeed: 0.9, obstacleSpeed: 1.3 },
 };
 
+const DEFAULTS = {
+  character: "astronaut" as const,
+  collectibleType: "coin" as const,
+  obstacleType: "rock" as const,
+  enemyType: "robot" as const,
+  weapon: "blaster" as const,
+  powerUps: [] as ("health" | "shield" | "speed" | "double_score")[],
+  boss: { enabled: false, type: "giant_robot" as const, health: 10 },
+};
+
+const WEAPON_STATS: Record<GameConfig["weapon"], { cooldown: number; bulletSpeed: number; damage: number; spread?: number }> = {
+  blaster: { cooldown: 0.25, bulletSpeed: 400, damage: 1 },
+  pistol: { cooldown: 0.4, bulletSpeed: 350, damage: 2 },
+  shotgun: { cooldown: 0.6, bulletSpeed: 300, damage: 1, spread: 3 },
+  rifle: { cooldown: 0.15, bulletSpeed: 450, damage: 0.8 },
+};
+
 /** Builds a fully validated level configuration. Never produces NaN/Infinity/impossible levels. */
 export function designLevel(mapped: SemanticResult): GameConfig {
   const type: GameType = GAME_TYPES.includes(mapped.type) ? mapped.type : "coin_collector";
@@ -32,8 +49,7 @@ export function designLevel(mapped: SemanticResult): GameConfig {
   let enemies = safeInt(mapped.enemies ?? base.enemies, base.enemies, LIMITS.enemies.min, LIMITS.enemies.max);
   if (mapped.enemiesScope === "total" && mapped.enemies !== null) {
     // Distribute total enemies across waves
-    const waves = base.waves;
-    enemies = Math.max(LIMITS.enemies.min, Math.min(LIMITS.enemies.max, Math.ceil(mapped.enemies / waves)));
+    enemies = Math.max(1, Math.round(enemies / base.waves));
   }
 
   return {
@@ -46,9 +62,18 @@ export function designLevel(mapped: SemanticResult): GameConfig {
     obstacles: safeInt(mapped.obstacles ?? base.obstacles, base.obstacles, LIMITS.obstacles.min, LIMITS.obstacles.max),
     levels: safeInt(base.levels, base.levels, LIMITS.levels.min, LIMITS.levels.max),
     waves: safeInt(base.waves, base.waves, LIMITS.waves.min, LIMITS.waves.max),
-    weapon: "blaster",
+    weapon: mapped.weapon ?? DEFAULTS.weapon,
     obstacleSpeed: base.obstacleSpeed,
-    character: "astronaut",
+    character: mapped.character ?? DEFAULTS.character,
+    collectibleType: mapped.collectibleType ?? DEFAULTS.collectibleType,
+    obstacleType: mapped.obstacleType ?? DEFAULTS.obstacleType,
+    enemyType: mapped.enemyType ?? DEFAULTS.enemyType,
+    powerUps: mapped.powerUps ?? DEFAULTS.powerUps,
+    boss: {
+      enabled: mapped.bossEnabled ?? DEFAULTS.boss.enabled,
+      type: DEFAULTS.boss.type,
+      health: DEFAULTS.boss.health,
+    },
   };
 }
 
@@ -72,12 +97,37 @@ export function sanitizeConfig(input: unknown): GameConfig {
     obstacles: safeInt(raw.obstacles, base.obstacles, LIMITS.obstacles.min, LIMITS.obstacles.max),
     levels: safeInt(raw.levels, base.levels, LIMITS.levels.min, LIMITS.levels.max),
     waves: safeInt(raw.waves, base.waves, LIMITS.waves.min, LIMITS.waves.max),
-    weapon: "blaster",
+    weapon: ["blaster", "pistol", "shotgun", "rifle"].includes(raw.weapon as string)
+      ? (raw.weapon as GameConfig["weapon"])
+      : DEFAULTS.weapon,
     obstacleSpeed: typeof raw.obstacleSpeed === "number" && Number.isFinite(raw.obstacleSpeed) 
       ? Math.min(2, Math.max(0.5, raw.obstacleSpeed)) 
       : base.obstacleSpeed,
     character: ["astronaut", "ninja", "soldier", "robot"].includes(raw.character as string) 
       ? (raw.character as GameConfig["character"]) 
-      : "astronaut",
+      : DEFAULTS.character,
+    collectibleType: ["coin", "gem", "crystal"].includes(raw.collectibleType as string)
+      ? (raw.collectibleType as GameConfig["collectibleType"])
+      : DEFAULTS.collectibleType,
+    obstacleType: ["rock", "spike", "meteor", "barrier"].includes(raw.obstacleType as string)
+      ? (raw.obstacleType as GameConfig["obstacleType"])
+      : DEFAULTS.obstacleType,
+    enemyType: ["robot", "alien", "drone", "monster"].includes(raw.enemyType as string)
+      ? (raw.enemyType as GameConfig["enemyType"])
+      : DEFAULTS.enemyType,
+    powerUps: Array.isArray(raw.powerUps) && raw.powerUps.every((p): p is "health" | "shield" | "speed" | "double_score" => 
+      ["health", "shield", "speed", "double_score"].includes(p)
+    ) ? raw.powerUps : DEFAULTS.powerUps,
+    boss: typeof raw.boss === "object" && raw.boss !== null
+      ? {
+          enabled: typeof raw.boss.enabled === "boolean" ? raw.boss.enabled : DEFAULTS.boss.enabled,
+          type: ["giant_robot", "alien_boss"].includes(raw.boss.type as string) 
+            ? (raw.boss.type as GameConfig["boss"]["type"]) 
+            : DEFAULTS.boss.type,
+          health: typeof raw.boss.health === "number" && Number.isFinite(raw.boss.health) 
+            ? Math.max(1, raw.boss.health) 
+            : DEFAULTS.boss.health,
+        }
+      : DEFAULTS.boss,
   };
 }

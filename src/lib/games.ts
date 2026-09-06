@@ -157,3 +157,100 @@ export function publicUrlForSlug(slug: string): string {
   const origin = typeof window === "undefined" ? "" : window.location.origin;
   return `${origin}/play/${slug}`;
 }
+
+// Daily generation limit functions
+const DAILY_LIMIT_KEY = "gameforge.daily_limit";
+const DAILY_LIMIT_BYPASS_EMAILS = ["internal@test.com", "admin@gameforge.ai"];
+
+export interface DailyLimitData {
+  date: string; // YYYY-MM-DD
+  count: number;
+}
+
+function getTodayString(): string {
+  const date = new Date().toISOString().split("T")[0];
+  return date ?? "";
+}
+
+export async function getDailyGenerationCount(): Promise<number> {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) return 0;
+
+  const today = getTodayString();
+  const { data, error } = await (supabase as any)
+    .from("daily_limits")
+    .select("count")
+    .eq("user_id", userData.user.id)
+    .eq("date", today)
+    .maybeSingle();
+  
+  if (error || !data) return 0;
+  return (data as { count: number }).count;
+}
+
+export async function incrementDailyGenerationCount(): Promise<void> {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) throw new Error("not_authenticated");
+
+  const today = getTodayString();
+  
+  // First, try to get existing record
+  const { data: existing, error: fetchError } = await (supabase as any)
+    .from("daily_limits")
+    .select("count")
+    .eq("user_id", userData.user.id)
+    .eq("date", today)
+    .maybeSingle();
+  
+  if (fetchError && fetchError.code !== "PGRST116") {
+    // PGRST116 is "not found", which is expected for new users
+    throw fetchError;
+  }
+  
+  if (existing) {
+    // Update existing record
+    const { error: updateError } = await (supabase as any)
+      .from("daily_limits")
+      .update({ count: (existing as { count: number }).count + 1 })
+      .eq("user_id", userData.user.id)
+      .eq("date", today);
+    
+    if (updateError) throw updateError;
+  } else {
+    // Insert new record
+    const { error: insertError } = await (supabase as any)
+      .from("daily_limits")
+      .insert({
+        user_id: userData.user.id,
+        date: today,
+        count: 1,
+      });
+    
+    if (insertError) throw insertError;
+  }
+}
+
+export async function canGenerateGame(): Promise<{ allowed: boolean; remaining: number }> {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) return { allowed: true, remaining: 5 };
+
+  // Check for internal tester bypass
+  if (userData.user.email && DAILY_LIMIT_BYPASS_EMAILS.includes(userData.user.email)) {
+    return { allowed: true, remaining: 999 };
+  }
+
+  const count = await getDailyGenerationCount();
+  const remaining = Math.max(0, 5 - count);
+  return { allowed: remaining > 0, remaining };
+}
+
+export async function resetDailyLimitForUser(userId: string): Promise<void> {
+  const today = getTodayString();
+  const { error } = await (supabase as any)
+    .from("daily_limits")
+    .delete()
+    .eq("user_id", userId)
+    .eq("date", today);
+  
+  if (error) throw error;
+}

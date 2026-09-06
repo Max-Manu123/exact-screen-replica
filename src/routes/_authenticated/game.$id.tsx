@@ -219,13 +219,53 @@ function GamePreviewPage() {
 
             {/* Numeric sliders (type-specific) */}
             {game.game_type === "coin_collector" && (
-              <ConfigSlider
-                label={t("editor.coins")}
-                value={editConfig.coins}
-                min={3}
-                max={30}
-                onChange={(v) => setEditConfig((c) => c ? { ...c, coins: v } : c)}
-              />
+              <>
+                <ConfigSlider
+                  label={t("editor.coins")}
+                  value={editConfig.coins}
+                  min={3}
+                  max={30}
+                  onChange={(v) => setEditConfig((c) => c ? { ...c, coins: v } : c)}
+                />
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-foreground">Collectible Type</p>
+                  <div className="flex flex-wrap gap-2">
+                    {["coin", "gem", "crystal"].map((type) => (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => setEditConfig((c) => c ? { ...c, collectibleType: type as any } : c)}
+                        className={`rounded-full px-3 py-1 text-sm transition-colors ${
+                          editConfig.collectibleType === type
+                            ? "bg-primary text-primary-foreground"
+                            : "border border-border bg-card text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {type.charAt(0).toUpperCase() + type.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-foreground">Character</p>
+                  <div className="flex flex-wrap gap-2">
+                    {["astronaut", "ninja", "soldier", "robot"].map((char) => (
+                      <button
+                        key={char}
+                        type="button"
+                        onClick={() => setEditConfig((c) => c ? { ...c, character: char as any } : c)}
+                        className={`rounded-full px-3 py-1 text-sm transition-colors ${
+                          editConfig.character === char
+                            ? "bg-primary text-primary-foreground"
+                            : "border border-border bg-card text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {char.charAt(0).toUpperCase() + char.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
             )}
             {game.game_type === "shooter" && (
               <>
@@ -236,6 +276,85 @@ function GamePreviewPage() {
                   max={20}
                   onChange={(v) => setEditConfig((c) => c ? { ...c, enemies: v } : c)}
                 />
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-foreground">Weapon</p>
+                  <div className="flex flex-wrap gap-2">
+                    {["blaster", "pistol", "shotgun", "rifle"].map((w) => (
+                      <button
+                        key={w}
+                        type="button"
+                        onClick={() => setEditConfig((c) => c ? { ...c, weapon: w as any } : c)}
+                        className={`rounded-full px-3 py-1 text-sm transition-colors ${
+                          editConfig.weapon === w
+                            ? "bg-primary text-primary-foreground"
+                            : "border border-border bg-card text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {w.charAt(0).toUpperCase() + w.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-foreground">Enemy Type</p>
+                  <div className="flex flex-wrap gap-2">
+                    {["robot", "alien", "drone", "monster"].map((et) => (
+                      <button
+                        key={et}
+                        type="button"
+                        onClick={() => setEditConfig((c) => c ? { ...c, enemyType: et as any } : c)}
+                        className={`rounded-full px-3 py-1 text-sm transition-colors ${
+                          editConfig.enemyType === et
+                            ? "bg-primary text-primary-foreground"
+                            : "border border-border bg-card text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {et.charAt(0).toUpperCase() + et.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-foreground">Power-ups</p>
+                  <div className="flex flex-wrap gap-2">
+                    {["health", "shield", "speed", "double_score"].map((pu) => (
+                      <button
+                        key={pu}
+                        type="button"
+                        onClick={() => {
+                          const current = editConfig.powerUps ?? [];
+                          const updated = current.includes(pu as any)
+                            ? current.filter((p) => p !== pu)
+                            : [...current, pu as any];
+                          setEditConfig((c) => c ? { ...c, powerUps: updated as any } : c);
+                        }}
+                        className={`rounded-full px-3 py-1 text-sm transition-colors ${
+                          (editConfig.powerUps ?? []).includes(pu as any)
+                            ? "bg-primary text-primary-foreground"
+                            : "border border-border bg-card text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {pu.replace("_", " ").charAt(0).toUpperCase() + pu.replace("_", " ").slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-foreground">Boss</p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditConfig((c) => c ? { ...c, boss: { ...c.boss, enabled: !c.boss.enabled } } : c)}
+                      className={`rounded-full px-3 py-1 text-sm transition-colors ${
+                        editConfig.boss?.enabled
+                          ? "bg-primary text-primary-foreground"
+                          : "border border-border bg-card text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {editConfig.boss?.enabled ? "Enabled" : "Disabled"}
+                    </button>
+                  </div>
+                </div>
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-foreground">Character</p>
                   <div className="flex flex-wrap gap-2">
@@ -274,6 +393,25 @@ function GamePreviewPage() {
                   step={0.1}
                   onChange={(v) => setEditConfig((c) => c ? { ...c, obstacleSpeed: v } : c)}
                 />
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-foreground">Obstacle Type</p>
+                  <div className="flex flex-wrap gap-2">
+                    {["rock", "spike", "meteor", "barrier"].map((ot) => (
+                      <button
+                        key={ot}
+                        type="button"
+                        onClick={() => setEditConfig((c) => c ? { ...c, obstacleType: ot as any } : c)}
+                        className={`rounded-full px-3 py-1 text-sm transition-colors ${
+                          editConfig.obstacleType === ot
+                            ? "bg-primary text-primary-foreground"
+                            : "border border-border bg-card text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {ot.charAt(0).toUpperCase() + ot.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-foreground">Character</p>
                   <div className="flex flex-wrap gap-2">

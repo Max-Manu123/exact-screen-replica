@@ -2,7 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
-import type { Database } from "@/integrations/supabase/types";
 import type { GameConfig, GameType } from "@/lib/engine/types";
 
 export interface PublicGame {
@@ -29,7 +28,7 @@ export const getPublicGame = createServerFn({ method: "GET" })
   .handler(async ({ data }): Promise<PublicGameResult> => {
     const url = process.env["SUPABASE_URL"]!;
     const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
-    const supabasePublic = createClient<Database>(url, key, {
+    const supabasePublic = createClient(url, key, {
       auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
       global: {
         fetch: (input, init) => {

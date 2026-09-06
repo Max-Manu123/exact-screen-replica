@@ -67,8 +67,8 @@ export class DodgeGame extends GameEngine {
   }
 
   protected renderWorld(): void {
-    for (const obstacle of this.scene.obstacles) drawObstacle(this.ctx, obstacle, this.palette);
-    if (this.scene.player) drawPlayer(this.ctx, this.scene.player, this.palette);
+    for (const obstacle of this.scene.obstacles) drawObstacle(this.ctx, obstacle, this.palette, this.config.obstacleType);
+    if (this.scene.player) drawPlayer(this.ctx, this.scene.player, this.palette, false, this.config.character);
 
     const remaining = Math.max(0, this.levelTarget - (this.elapsed - this.levelStart));
     this.ctx.save();

@@ -14,6 +14,47 @@ export const DIFFICULTY_HINTS: Record<Difficulty, string[]> = {
   hard: ["hard", "difficult", "hardcore", "challenging", "insane", "brutal", "dificil", "desafiador"],
 };
 
+export const CHARACTER_HINTS: Record<GameConfig["character"], string[]> = {
+  astronaut: ["astronaut", "astronauta", "space", "espaco", "nave"],
+  ninja: ["ninja", "stealth", "furtivo", "shadow"],
+  robot: ["robot", "robo", "mech", "cyborg", "android"],
+  soldier: ["soldier", "soldado", "marine", "military", "militar"],
+};
+
+export const COLLECTIBLE_HINTS: Record<GameConfig["collectibleType"], string[]> = {
+  coin: ["coin", "coins", "moeda", "moedas", "gold", "ouro"],
+  gem: ["gem", "gems", "gem", "joia", "crystal", "cristal"],
+  crystal: ["crystal", "crystals", "cristal", "cristais", "shard"],
+};
+
+export const OBSTACLE_HINTS: Record<GameConfig["obstacleType"], string[]> = {
+  rock: ["rock", "rocks", "pedra", "pedras", "stone"],
+  spike: ["spike", "spikes", "espinho", "espinhos", "trap"],
+  meteor: ["meteor", "meteors", "meteor", "meteorito", "fireball"],
+  barrier: ["barrier", "barriers", "barreira", "barreiras", "wall", "parede"],
+};
+
+export const WEAPON_HINTS: Record<GameConfig["weapon"], string[]> = {
+  blaster: ["blaster", "laser", "raio", "beam"],
+  pistol: ["pistol", "pistola", "gun", "arma"],
+  shotgun: ["shotgun", "escopeta", "spread", "shot"],
+  rifle: ["rifle", "rifle", "sniper", "rifle"],
+};
+
+export const ENEMY_HINTS: Record<GameConfig["enemyType"], string[]> = {
+  robot: ["robot", "robots", "robo", "robos", "mech"],
+  alien: ["alien", "aliens", "alien", "extraterrestre"],
+  drone: ["drone", "drones", "uav", "voador"],
+  monster: ["monster", "monsters", "monstro", "monstros", "beast", "fera"],
+};
+
+export const POWERUP_HINTS: Record<GameConfig["powerUps"][number], string[]> = {
+  health: ["health", "vida", "life", "cura", "heal"],
+  shield: ["shield", "escudo", "protection", "protecao"],
+  speed: ["speed", "velocidade", "fast", "rapido", "boost"],
+  double_score: ["double", "score", "pontos", "x2", "bonus", "bônus"],
+};
+
 const DEFAULT_THEME: Record<GameType, Theme> = {
   coin_collector: "forest",
   dodge: "city",
@@ -108,6 +149,13 @@ export interface SemanticResult {
   name: string;
   /** Whether enemy count is total across game or per wave (null = ambiguous) */
   enemiesScope: "total" | "per_wave" | null;
+  character: GameConfig["character"] | null;
+  collectibleType: GameConfig["collectibleType"] | null;
+  obstacleType: GameConfig["obstacleType"] | null;
+  weapon: GameConfig["weapon"] | null;
+  enemyType: GameConfig["enemyType"] | null;
+  powerUps: GameConfig["powerUps"] | null;
+  bossEnabled: boolean | null;
 }
 
 /** Turns free text into a structured (still unvalidated) description. */
@@ -135,6 +183,31 @@ export function mapPrompt(prompt: string, type: GameType): SemanticResult {
     }
   }
 
+  // Detect new features
+  const character = pickFromHints<GameConfig["character"]>(text, CHARACTER_HINTS);
+  const collectibleType = pickFromHints<GameConfig["collectibleType"]>(text, COLLECTIBLE_HINTS);
+  const obstacleType = pickFromHints<GameConfig["obstacleType"]>(text, OBSTACLE_HINTS);
+  const weapon = pickFromHints<GameConfig["weapon"]>(text, WEAPON_HINTS);
+  const enemyType = pickFromHints<GameConfig["enemyType"]>(text, ENEMY_HINTS);
+  
+  // Detect power-ups (can have multiple)
+  const detectedPowerUps: GameConfig["powerUps"] = [];
+  for (const [powerUp, hints] of Object.entries(POWERUP_HINTS)) {
+    for (const hint of hints) {
+      if (text.includes(hint)) {
+        detectedPowerUps.push(powerUp as GameConfig["powerUps"][number]);
+        break;
+      }
+    }
+  }
+  const powerUps = detectedPowerUps.length > 0 ? detectedPowerUps : null;
+  
+  // Detect boss
+  let bossEnabled: boolean | null = null;
+  if (text.includes("boss") || text.includes("chefe") || text.includes("final boss")) {
+    bossEnabled = true;
+  }
+
   return {
     type,
     theme,
@@ -144,6 +217,13 @@ export function mapPrompt(prompt: string, type: GameType): SemanticResult {
     obstacles,
     name: suggestName(prompt, type, theme),
     enemiesScope,
+    character,
+    collectibleType,
+    obstacleType,
+    weapon,
+    enemyType,
+    powerUps,
+    bossEnabled,
   };
 }
 

@@ -2,7 +2,6 @@
 import { createMiddleware } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
 import { createClient } from '@supabase/supabase-js'
-import type { Database } from './types'
 
 
 
@@ -73,7 +72,7 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
       throw new Error('Unauthorized: Invalid token');
     }
 
-    const supabase = createClient<Database>(
+    const supabase = createClient(
       SUPABASE_URL!,
       SUPABASE_PUBLISHABLE_KEY!,
       {

@@ -61,6 +61,12 @@ export abstract class GameEngine {
       time: 0,
       objectiveKey: OBJECTIVE_KEY[config.type],
       objectiveState: "pending",
+      shielded: false,
+      shieldTimer: 0,
+      speedBoost: false,
+      speedTimer: 0,
+      doubleScore: false,
+      doubleScoreTimer: 0,
     };
   }
 
@@ -273,6 +279,12 @@ export abstract class GameEngine {
       time: 0,
       objectiveKey: OBJECTIVE_KEY[this.config.type],
       objectiveState: "pending",
+      shielded: false,
+      shieldTimer: 0,
+      speedBoost: false,
+      speedTimer: 0,
+      doubleScore: false,
+      doubleScoreTimer: 0,
     };
     this.buildLevel();
   }

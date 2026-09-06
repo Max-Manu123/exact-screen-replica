@@ -23,9 +23,23 @@ export interface GameConfig {
   obstacleSpeed: number;
   levels: number;
   waves: number;
-  weapon: "blaster";
+  weapon: "blaster" | "pistol" | "shotgun" | "rifle";
   /** Character type for visual representation. */
   character: "astronaut" | "ninja" | "soldier" | "robot";
+  /** Collectible type for Coin Collector. */
+  collectibleType: "coin" | "gem" | "crystal";
+  /** Obstacle type for Dodge. */
+  obstacleType: "rock" | "spike" | "meteor" | "barrier";
+  /** Enemy type for Shooter. */
+  enemyType: "robot" | "alien" | "drone" | "monster";
+  /** Power-ups enabled. */
+  powerUps: ("health" | "shield" | "speed" | "double_score")[];
+  /** Boss configuration. */
+  boss: {
+    enabled: boolean;
+    type: "giant_robot" | "alien_boss";
+    health: number;
+  };
 }
 
 export type GameStatus = "ready" | "playing" | "paused" | "game_over" | "level_complete" | "completed";
@@ -37,13 +51,19 @@ export interface GameStats {
   coinsTotal: number;
   level: number;
   levels: number;
+  lives: number;
   wave: number;
   waves: number;
+  objectiveState: ObjectiveState;
+  shielded: boolean;
+  shieldTimer: number;
+  speedBoost: boolean;
+  speedTimer: number;
+  doubleScore: boolean;
+  doubleScoreTimer: number;
   xp: number;
-  lives: number;
   time: number;
   objectiveKey: string;
-  objectiveState: ObjectiveState;
 }
 
 export interface GameHooks {
@@ -61,4 +81,6 @@ export interface Entity {
   alive: boolean;
   hp?: number;
   cooldown?: number;
+  damage?: number;
+  powerUpType?: "health" | "shield" | "speed" | "double_score";
 }

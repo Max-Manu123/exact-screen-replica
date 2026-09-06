@@ -2,6 +2,7 @@ import { drawCoin, drawObstacle, drawPlayer } from "../AssetGenerator";
 import { GameEngine } from "../GameEngine";
 import { RULES, coinScore, coinsForLevel, rectsOverlap, speedFor } from "../GameRulesEngine";
 import { Scene } from "../Scene";
+import type { GameConfig } from "../types";
 
 /** Top-down coin collecting: collect every coin in the level to advance. */
 export class CoinCollectorGame extends GameEngine {
@@ -41,21 +42,8 @@ export class CoinCollectorGame extends GameEngine {
 
     const axis = this.axis();
     const speed = speedFor(this.config);
-    let dx = axis.x * speed * dt;
-    let dy = axis.y * speed * dt;
-
-    if (this.pointer?.active) {
-      const targetX = this.pointer.x - player.w / 2;
-      const targetY = this.pointer.y - player.h / 2;
-      const diffX = targetX - player.x;
-      const diffY = targetY - player.y;
-      const distance = Math.hypot(diffX, diffY);
-      if (distance > 2) {
-        const step = Math.min(distance, speed * dt);
-        dx = (diffX / distance) * step;
-        dy = (diffY / distance) * step;
-      }
-    }
+    const dx = axis.x * speed * dt;
+    const dy = axis.y * speed * dt;
 
     const prevX = player.x;
     const prevY = player.y;
@@ -86,8 +74,8 @@ export class CoinCollectorGame extends GameEngine {
 
   protected renderWorld(): void {
     for (const obstacle of this.scene.obstacles) drawObstacle(this.ctx, obstacle, this.palette);
-    for (const coin of this.scene.coins) drawCoin(this.ctx, coin, this.palette, this.elapsed * 4 + coin.x);
-    if (this.scene.player) drawPlayer(this.ctx, this.scene.player, this.palette);
+    for (const coin of this.scene.coins) drawCoin(this.ctx, coin, this.palette, this.elapsed * 4 + coin.x, this.config.collectibleType);
+    if (this.scene.player) drawPlayer(this.ctx, this.scene.player, this.palette, false, this.config.character);
     void RULES;
   }
 }
