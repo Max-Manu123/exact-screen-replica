@@ -28,14 +28,8 @@ export class DodgeGame extends GameEngine {
     const speed = speedFor(this.config);
 
     const axis = this.axis();
-    if (this.pointer?.active) {
-      const target = this.pointer.x - player.w / 2;
-      const diff = target - player.x;
-      if (Math.abs(diff) > 2) player.x += Math.sign(diff) * Math.min(Math.abs(diff), speed * dt);
-    } else {
-      player.x += axis.x * speed * dt;
-      player.y += axis.y * speed * 0.6 * dt;
-    }
+    player.x += axis.x * speed * dt;
+    player.y += axis.y * speed * 0.6 * dt;
     this.clampToBoard(player);
 
     const spawnInterval = Math.max(0.18, 0.95 / (ramp * (0.6 + this.config.obstacles / 12)));

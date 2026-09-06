@@ -331,8 +331,13 @@ export abstract class GameEngine {
     this.virtual = { x: 0, y: 0, shoot: false };
   };
 
-  private onPointer = (event: PointerEvent) => {
-    if (event.type === "pointermove" && event.buttons === 0 && event.pointerType !== "mouse") return;
+  /**
+   * Desktop shooting only: a held left mouse button. Hovering or moving the
+   * mouse over the canvas never produces input, and the mouse never moves
+   * the player (keyboard / on-screen joystick do that).
+   */
+  private onPointerDown = (event: PointerEvent) => {
+    if (event.pointerType !== "mouse" || event.button !== 0) return;
     const rect = this.canvas.getBoundingClientRect();
     this.pointer = {
       x: ((event.clientX - rect.left) / rect.width) * this.width,
@@ -340,6 +345,7 @@ export abstract class GameEngine {
       active: true,
     };
   };
+
 
   private onPointerEnd = () => {
     this.pointer = null;
