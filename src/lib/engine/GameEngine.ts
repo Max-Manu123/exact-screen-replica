@@ -79,10 +79,10 @@ export abstract class GameEngine {
     window.addEventListener("keydown", this.onKeyDown);
     window.addEventListener("keyup", this.onKeyUp);
     window.addEventListener("blur", this.onBlur);
-    this.canvas.addEventListener("pointerdown", this.onPointer);
-    this.canvas.addEventListener("pointermove", this.onPointer);
+    this.canvas.addEventListener("pointerdown", this.onPointerDown);
     this.canvas.addEventListener("pointerup", this.onPointerEnd);
-    this.canvas.addEventListener("pointerleave", this.onPointerEnd);
+    this.canvas.addEventListener("pointercancel", this.onPointerEnd);
+
     this.resetGame();
     this.render();
     this.emitStats();
@@ -140,10 +140,10 @@ export abstract class GameEngine {
     window.removeEventListener("keydown", this.onKeyDown);
     window.removeEventListener("keyup", this.onKeyUp);
     window.removeEventListener("blur", this.onBlur);
-    this.canvas.removeEventListener("pointerdown", this.onPointer);
-    this.canvas.removeEventListener("pointermove", this.onPointer);
+    this.canvas.removeEventListener("pointerdown", this.onPointerDown);
     this.canvas.removeEventListener("pointerup", this.onPointerEnd);
-    this.canvas.removeEventListener("pointerleave", this.onPointerEnd);
+    this.canvas.removeEventListener("pointercancel", this.onPointerEnd);
+
     this.resizeObserver?.disconnect();
     this.resizeObserver = null;
     this.keys.clear();
