@@ -48,11 +48,14 @@ export function GameCanvas({ config, className }: { config: GameConfig; classNam
     if (!node) return;
     try {
       if (document.fullscreenElement) await document.exitFullscreen();
-      else await node.requestFullscreen();
+      else {
+        await node.requestFullscreen();
+        track("fullscreen_used", { game_type: config.type });
+      }
     } catch {
       /* fullscreen may be blocked by the browser; keep playing inline */
     }
-  }, []);
+  }, [config.type]);
 
 
   useEffect(() => {
@@ -71,9 +74,13 @@ export function GameCanvas({ config, className }: { config: GameConfig; classNam
     // A new config rebuilds the game from template + config.
   }, [config]);
 
-  const play = useCallback(() => engineRef.current?.start(), []);
+  const play = useCallback(() => {
+    engineRef.current?.start();
+    track("game_played", { game_type: config.type });
+  }, [config.type]);
   const pause = useCallback(() => engineRef.current?.pause(), []);
   const restart = useCallback(() => engineRef.current?.restart(), []);
+
 
   const overlay = useMemo(() => {
     if (status === "ready") return t("game.ready");
@@ -189,14 +196,12 @@ export function GameCanvas({ config, className }: { config: GameConfig; classNam
           )}
         </Button>
 
-        {!coarse && config.type === "shooter" && (
+        {!coarse && (
           <span className="text-xs text-muted-foreground">
-            Coloque o mouse sobre o canvas e clique com o botão esquerdo para atirar
+            {config.type === "shooter" ? t("game.pcHintShooter") : t("game.pcHintMove")}
           </span>
         )}
-        {!coarse && config.type !== "shooter" && (
-          <span className="text-xs text-muted-foreground">{t("game.controlsHint")}</span>
-        )}
+
       </div>
     </div>
   );
