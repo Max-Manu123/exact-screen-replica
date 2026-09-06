@@ -91,7 +91,7 @@ export function GameCanvas({ config, className }: { config: GameConfig; classNam
       ref={wrapperRef}
       className={cn(
         "flex flex-col gap-3",
-        isFullscreen && "h-screen w-screen justify-center bg-background p-4",
+        isFullscreen && "h-screen w-screen justify-center bg-background p-2 sm:p-4",
         className,
       )}
     >
@@ -139,6 +139,11 @@ export function GameCanvas({ config, className }: { config: GameConfig; classNam
             "block w-full touch-none",
             isFullscreen ? "h-full" : "h-[52vh] max-h-[560px] min-h-[260px]",
           )}
+          style={{ 
+            touchAction: isFullscreen ? "none" : "auto",
+            maxWidth: "100%",
+            maxHeight: isFullscreen ? "100%" : "560px"
+          }}
           aria-label={t("game.objective")}
         />
 
@@ -176,7 +181,14 @@ export function GameCanvas({ config, className }: { config: GameConfig; classNam
           )}
         </Button>
 
-        <span className="text-xs text-muted-foreground">{t("game.controlsHint")}</span>
+        {!coarse && config.type === "shooter" && (
+          <span className="text-xs text-muted-foreground">
+            Coloque o mouse sobre o canvas e clique com o botão esquerdo para atirar
+          </span>
+        )}
+        {!coarse && config.type !== "shooter" && (
+          <span className="text-xs text-muted-foreground">{t("game.controlsHint")}</span>
+        )}
       </div>
 
       {coarse && <TouchControls engineRef={engineRef} showShoot={config.type === "shooter"} />}
@@ -192,24 +204,49 @@ function TouchControls({
   showShoot: boolean;
 }) {
   const { t } = useI18n();
-  const held = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const joystickRef = useRef<HTMLDivElement | null>(null);
+  const [joystickActive, setJoystickActive] = useState(false);
+  const [joystickPosition, setJoystickPosition] = useState({ x: 0, y: 0 });
 
-  const setAxis = (x: number, y: number) => {
-    held.current = { x, y };
+  const handleJoystickMove = (clientX: number, clientY: number) => {
+    if (!joystickRef.current) return;
+    const rect = joystickRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    
+    const deltaX = clientX - centerX;
+    const deltaY = clientY - centerY;
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    const maxDistance = rect.width / 2;
+    
+    const normalizedDistance = Math.min(distance, maxDistance) / maxDistance;
+    const angle = Math.atan2(deltaY, deltaX);
+    
+    const x = Math.cos(angle) * normalizedDistance;
+    const y = Math.sin(angle) * normalizedDistance;
+    
+    setJoystickPosition({ x, y });
     engineRef.current?.setVirtualAxis(x, y);
   };
 
-  const dirProps = (x: number, y: number) => ({
-    onPointerDown: (event: React.PointerEvent) => {
-      event.preventDefault();
-      (event.target as HTMLElement).setPointerCapture?.(event.pointerId);
-      setAxis(x, y);
-    },
-    onPointerUp: () => setAxis(0, 0),
-    onPointerCancel: () => setAxis(0, 0),
-    onPointerLeave: () => setAxis(0, 0),
-    onContextMenu: (event: React.MouseEvent) => event.preventDefault(),
-  });
+  const handleJoystickStart = (event: React.PointerEvent) => {
+    event.preventDefault();
+    setJoystickActive(true);
+    handleJoystickMove(event.clientX, event.clientY);
+  };
+
+  const handleJoystickMoveEvent = (event: React.PointerEvent) => {
+    event.preventDefault();
+    if (joystickActive) {
+      handleJoystickMove(event.clientX, event.clientY);
+    }
+  };
+
+  const handleJoystickEnd = () => {
+    setJoystickActive(false);
+    setJoystickPosition({ x: 0, y: 0 });
+    engineRef.current?.setVirtualAxis(0, 0);
+  };
 
   useEffect(() => {
     const engine = engineRef.current;
@@ -219,30 +256,32 @@ function TouchControls({
     };
   }, [engineRef]);
 
-  const padClass =
-    "flex size-16 select-none items-center justify-center rounded-xl border border-border bg-card/80 text-lg font-semibold text-foreground active:bg-primary active:text-primary-foreground";
-
   return (
     <div className="flex items-end justify-between gap-4 pt-1">
-      <div className="grid grid-cols-3 grid-rows-3 gap-1" aria-label={t("controls.move")}>
-        <span />
-        <button type="button" className={padClass} {...dirProps(0, -1)}>
-          ↑
-        </button>
-        <span />
-        <button type="button" className={padClass} {...dirProps(-1, 0)}>
-          ←
-        </button>
-        <span />
-        <button type="button" className={padClass} {...dirProps(1, 0)}>
-          →
-        </button>
-        <span />
-        <button type="button" className={padClass} {...dirProps(0, 1)}>
-          ↓
-        </button>
-        <span />
+      {/* Virtual Joystick */}
+      <div
+        ref={joystickRef}
+        className="relative size-32 select-none rounded-full border-2 border-border bg-card/80"
+        onPointerDown={handleJoystickStart}
+        onPointerMove={handleJoystickMoveEvent}
+        onPointerUp={handleJoystickEnd}
+        onPointerCancel={handleJoystickEnd}
+        onPointerLeave={handleJoystickEnd}
+        onContextMenu={(event) => event.preventDefault()}
+        aria-label={t("controls.move")}
+      >
+        {/* Joystick knob */}
+        <div
+          className="absolute size-12 rounded-full bg-primary/50 transition-transform"
+          style={{
+            left: "50%",
+            top: "50%",
+            transform: `translate(calc(-50% + ${joystickPosition.x * 40}px), calc(-50% + ${joystickPosition.y * 40}px))`,
+          }}
+        />
       </div>
+
+      {/* Shoot button */}
       {showShoot && (
         <button
           type="button"

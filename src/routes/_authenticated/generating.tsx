@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n";
 import { generateGame, PIPELINE_STEPS } from "@/lib/engine/pipeline";
 import type { Answers } from "@/lib/engine/pipeline";
-import { insertGame } from "@/lib/games";
+import { incrementDailyGenerationCount, insertGame } from "@/lib/games";
 import { cn } from "@/lib/utils";
 
 const searchSchema = z.object({
@@ -56,6 +56,8 @@ function GeneratingPage() {
     )
       .then(async (result) => {
         setStage("saving");
+        // Increment daily limit only after successful generation
+        await incrementDailyGenerationCount();
         const record = await insertGame({
           name: result.name,
           original_prompt: result.prompt,

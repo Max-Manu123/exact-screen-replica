@@ -9,7 +9,7 @@ import { QuestionFlow } from "@/components/QuestionFlow";
 import { WaitlistModal } from "@/components/WaitlistModal";
 import { useI18n } from "@/i18n";
 import { analyzePrompt, GenerationError, type Answers, type Question } from "@/lib/engine/pipeline";
-import { canGenerateGame, incrementDailyGenerationCount } from "@/lib/games";
+import { canGenerateGame } from "@/lib/games";
 
 const searchSchema = z.object({ prompt: z.string().optional() });
 
@@ -37,24 +37,11 @@ function CreatePage() {
   const [answers, setAnswers] = useState<Answers>({});
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [limitReached, setLimitReached] = useState(false);
-  const [remainingGames, setRemainingGames] = useState(5);
   const [waitlistOpen, setWaitlistOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     textareaRef.current?.focus();
-    // Check daily limit on mount
-    void (async () => {
-      try {
-        const { allowed, remaining } = await canGenerateGame();
-        setRemainingGames(remaining);
-        setLimitReached(!allowed);
-      } catch {
-        // If check fails, allow generation
-        setLimitReached(false);
-      }
-    })();
   }, []);
 
   useEffect(() => {
@@ -74,8 +61,9 @@ function CreatePage() {
       return;
     }
 
-    // Check daily limit
-    if (limitReached) {
+    // Check daily limit before proceeding
+    const { allowed } = await canGenerateGame();
+    if (!allowed) {
       setWaitlistOpen(true);
       return;
     }
@@ -83,9 +71,6 @@ function CreatePage() {
     setLoading(true);
 
     try {
-      // Increment daily limit before proceeding
-      await incrementDailyGenerationCount();
-      
       const analysis = analyzePrompt(clean);
       if (analysis.questions.length > 0) {
         setQuestions(analysis.questions);
@@ -141,16 +126,6 @@ function CreatePage() {
         <p className="mt-1 text-sm text-muted-foreground">{t("create.subtitle")}</p>
       </div>
 
-      {/* Daily limit indicator */}
-      <div className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
-        <span className="text-sm text-muted-foreground">
-          Free games remaining today: <span className="font-semibold text-foreground">{remainingGames}</span>
-        </span>
-        {limitReached && (
-          <span className="text-sm font-medium text-destructive">Daily limit reached</span>
-        )}
-      </div>
-
       <form onSubmit={handleSubmit} className="space-y-4">
         <Textarea
           ref={textareaRef}
@@ -163,15 +138,14 @@ function CreatePage() {
           }}
           placeholder={t("dashboard.promptPlaceholder")}
           className="resize-none text-base"
-          disabled={limitReached}
         />
         {error && <p className="text-sm text-destructive">{error}</p>}
 
-        <Button 
-          type="submit" 
-          size="lg" 
+        <Button
+          type="submit"
+          size="lg"
           className="w-full sm:w-auto"
-          disabled={loading || limitReached}
+          disabled={loading}
         >
           <Sparkles className="mr-2 size-4" />
           {loading ? "Processing..." : t("create.cta")}
@@ -196,8 +170,7 @@ function CreatePage() {
                 setError(null);
                 textareaRef.current?.focus();
               }}
-              disabled={limitReached}
-              className="rounded-xl border border-border bg-card p-3 text-left text-sm text-muted-foreground transition-colors hover:border-primary/50 hover:bg-card/80 hover:text-foreground disabled:opacity-50"
+              className="rounded-xl border border-border bg-card p-3 text-left text-sm text-muted-foreground transition-colors hover:border-primary/50 hover:bg-card/80 hover:text-foreground"
             >
               {example}
             </button>

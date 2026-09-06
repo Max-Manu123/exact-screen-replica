@@ -1,11 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowRight, Coins, Crosshair, Shield } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { WaitlistModal } from "@/components/WaitlistModal";
 import { useI18n } from "@/i18n";
-import { GAME_TYPES } from "@/lib/engine/types";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -25,9 +24,6 @@ export const Route = createFileRoute("/")({
   }),
   component: Landing,
 });
-
-const ICONS = { coin_collector: Coins, dodge: Shield, shooter: Crosshair } as const;
-const DESC = { coin_collector: "templates.coinDesc", dodge: "templates.dodgeDesc", shooter: "templates.shooterDesc" } as const;
 
 function Landing() {
   const { t } = useI18n();
@@ -79,23 +75,6 @@ function Landing() {
               <p className="mt-1 text-sm text-muted-foreground">{t(`landing.step${step}Text`)}</p>
             </div>
           ))}
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-5xl px-4 py-16">
-        <h2 className="text-center text-2xl font-semibold text-foreground">{t("landing.supportedTitle")}</h2>
-        <p className="mt-2 text-center text-sm text-muted-foreground">{t("landing.supportedSubtitle")}</p>
-        <div className="mt-8 grid gap-4 sm:grid-cols-3">
-          {GAME_TYPES.map((type) => {
-            const Icon = ICONS[type];
-            return (
-              <div key={type} className="panel rounded-2xl p-5">
-                <Icon className="size-6 text-primary" />
-                <h3 className="mt-3 font-semibold text-foreground">{t(`templates.${type}`)}</h3>
-                <p className="mt-1 text-sm text-muted-foreground">{t(DESC[type])}</p>
-              </div>
-            );
-          })}
         </div>
       </section>
 
