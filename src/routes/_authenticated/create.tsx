@@ -95,7 +95,7 @@ function CreatePage() {
 
     try {
       const analysis = analyzePrompt(clean);
-      track("generation_started", { game_type: analysis.type });
+      track("game_generation_started", { game_type: analysis.type });
       if (analysis.questions.length > 0) {
         setQuestions(analysis.questions);
         setAnswers({});

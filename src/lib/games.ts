@@ -160,7 +160,7 @@ export function publicUrlForSlug(slug: string): string {
 
 // Daily generation limit functions
 const DAILY_LIMIT_KEY = "gameforge.daily_limit";
-const DAILY_LIMIT_BYPASS_EMAILS = ["internal@test.com", "admin@gameforge.ai"];
+const DAILY_LIMIT_BYPASS_EMAILS = ["maxflexteam@gmail.com"];
 
 export interface DailyLimitData {
   date: string; // YYYY-MM-DD

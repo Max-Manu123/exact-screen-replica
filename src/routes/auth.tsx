@@ -11,7 +11,7 @@ import { useI18n } from "@/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { isValidEmail } from "@/lib/games";
-import { track } from "@/lib/analytics";
+import { track, identifyUser, isTestUser } from "@/lib/analytics";
 
 const searchSchema = z.object({
   redirect: z.string().optional(),
@@ -51,10 +51,16 @@ function AuthPage() {
 
   useEffect(() => {
     void supabase.auth.getSession().then(({ data }) => {
-      if (data.session) goAfterAuth();
+      if (data.session) {
+        identifyUser(data.session.user.id, isTestUser(data.session.user.email));
+        goAfterAuth();
+      }
     });
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
+        // Identify user in PostHog
+        identifyUser(session.user.id, isTestUser(session.user.email));
+        
         // Track signup for new users (OAuth signups)
         const createdAt = new Date(session.user.created_at).getTime();
         const now = Date.now();
@@ -88,6 +94,8 @@ function AuthPage() {
         return;
       }
       if (result.data.session) {
+        const isTest = isTestUser(result.data.session.user.email);
+        identifyUser(result.data.session.user.id, isTest);
         if (mode === "signup") {
           toast.success(t("auth.signedUp"));
           track("sign_up");

@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { I18nProvider } from "../i18n";
-import { initAnalytics } from "@/lib/analytics";
+import { initAnalytics, identifyUser, isTestUser } from "@/lib/analytics";
 
 function NotFoundComponent() {
   return (
@@ -144,10 +144,12 @@ function OAuthReturnHandler() {
       new URLSearchParams(hash.replace(/^#/, "")).has("access_token");
 
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event !== "SIGNED_IN" || !session) return;
-      const path = window.location.pathname;
-      if (path === "/" && isCallback) {
-        void router.navigate({ to: "/dashboard" });
+      if (event === "SIGNED_IN" && session) {
+        identifyUser(session.user.id, isTestUser(session.user.email));
+        const path = window.location.pathname;
+        if (path === "/" && isCallback) {
+          void router.navigate({ to: "/dashboard" });
+        }
       }
     });
     return () => data.subscription.unsubscribe();
@@ -161,6 +163,13 @@ function RootComponent() {
   useEffect(() => {
     // Initialize PostHog analytics on app load
     initAnalytics();
+    
+    // Identify user if already authenticated
+    void supabase.auth.getSession().then(({ data }) => {
+      if (data.session) {
+        identifyUser(data.session.user.id, isTestUser(data.session.user.email));
+      }
+    });
   }, []);
 
   return (
