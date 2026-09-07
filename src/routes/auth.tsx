@@ -11,6 +11,7 @@ import { useI18n } from "@/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { isValidEmail } from "@/lib/games";
+import { track } from "@/lib/analytics";
 
 const searchSchema = z.object({
   redirect: z.string().optional(),
@@ -53,7 +54,16 @@ function AuthPage() {
       if (data.session) goAfterAuth();
     });
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session) goAfterAuth();
+      if (event === "SIGNED_IN" && session) {
+        // Track signup for new users (OAuth signups)
+        const createdAt = new Date(session.user.created_at).getTime();
+        const now = Date.now();
+        // If account was created very recently (within 5 seconds), it's a new signup
+        if (now - createdAt < 5000) {
+          track("sign_up");
+        }
+        goAfterAuth();
+      }
     });
     return () => data.subscription.unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -78,10 +88,14 @@ function AuthPage() {
         return;
       }
       if (result.data.session) {
-        if (mode === "signup") toast.success(t("auth.signedUp"));
+        if (mode === "signup") {
+          toast.success(t("auth.signedUp"));
+          track("sign_up");
+        }
         goAfterAuth();
       } else {
         toast.success(t("auth.signedUp"));
+        track("sign_up");
       }
     } catch {
       setError(t("common.error"));

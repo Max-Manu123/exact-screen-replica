@@ -67,7 +67,7 @@ function CreatePage() {
     const genre = detectUnsupportedGenre(clean);
     setUnsupportedGenre(genre);
     setStage("unsupported");
-    track("unsupported_game_type_detected", { detected_type: genre ?? "unknown" });
+    track("unsupported_game_type", { detected_type: genre ?? "unknown" });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -86,7 +86,7 @@ function CreatePage() {
     // Check daily limit before proceeding
     const { allowed } = await canGenerateGame();
     if (!allowed) {
-      track("generation_limit_reached");
+      track("daily_limit_reached");
       setWaitlistOpen(true);
       return;
     }
@@ -95,7 +95,7 @@ function CreatePage() {
 
     try {
       const analysis = analyzePrompt(clean);
-      track("game_generation_started", { game_type: analysis.type });
+      track("generation_started", { game_type: analysis.type });
       if (analysis.questions.length > 0) {
         setQuestions(analysis.questions);
         setAnswers({});

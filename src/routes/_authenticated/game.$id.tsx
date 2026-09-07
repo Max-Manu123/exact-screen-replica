@@ -14,6 +14,7 @@ import { useI18n } from "@/i18n";
 import { getGame, updateGame, type GameRecord } from "@/lib/games";
 import { DIFFICULTIES, THEMES } from "@/lib/engine/types";
 import type { Difficulty, GameConfig, Theme } from "@/lib/engine/types";
+import { track } from "@/lib/analytics";
 
 export const Route = createFileRoute("/_authenticated/game/$id")({
   head: () => ({
@@ -70,6 +71,7 @@ function GamePreviewPage() {
   const [editConfig, setEditConfig] = useState<GameConfig | null>(null);
   const [saving, setSaving] = useState(false);
   const [liveConfig, setLiveConfig] = useState<GameConfig | null>(null);
+  const [hasUnsavedEdits, setHasUnsavedEdits] = useState(false);
 
   useEffect(() => {
     getGame(id)
@@ -88,6 +90,7 @@ function GamePreviewPage() {
   const applyEdit = () => {
     if (!editConfig) return;
     setLiveConfig({ ...editConfig });
+    setHasUnsavedEdits(true);
     toast.success(t("editor.applied"));
   };
 
@@ -103,7 +106,13 @@ function GamePreviewPage() {
       const updated = await updateGame(game.id, { name, game_config: editConfig });
       setGame(updated);
       setLiveConfig(updated.game_config);
+      setHasUnsavedEdits(false);
       toast.success(t("common.saved"));
+      track("game_saved", { game_type: game.game_type });
+      // Track game_edited if config actually changed from original
+      if (JSON.stringify(game.game_config) !== JSON.stringify(editConfig) || game.name !== name) {
+        track("game_edited", { game_type: game.game_type });
+      }
     } catch {
       toast.error(t("common.error"));
     } finally {

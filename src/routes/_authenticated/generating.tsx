@@ -9,6 +9,7 @@ import { generateGame, PIPELINE_STEPS } from "@/lib/engine/pipeline";
 import type { Answers } from "@/lib/engine/pipeline";
 import { incrementDailyGenerationCount, insertGame } from "@/lib/games";
 import { cn } from "@/lib/utils";
+import { track } from "@/lib/analytics";
 
 const searchSchema = z.object({
   prompt: z.string().min(1),
@@ -64,6 +65,7 @@ function GeneratingPage() {
           game_type: result.type,
           game_config: result.config,
         });
+        track("game_saved", { game_type: result.type });
         await navigate({ to: "/game/$id", params: { id: record.id } });
       })
       .catch((err: unknown) => {

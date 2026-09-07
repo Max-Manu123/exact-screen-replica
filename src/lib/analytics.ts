@@ -31,16 +31,14 @@ export function deviceType(): "mobile" | "tablet" | "desktop" {
 }
 
 export type AnalyticsEvent =
-  | "signup"
-  | "game_generation_started"
-  | "game_generated"
-  | "game_generation_failed"
+  | "sign_up"
+  | "generation_started"
   | "game_played"
   | "game_edited"
   | "game_saved"
   | "fullscreen_used"
-  | "generation_limit_reached"
-  | "unsupported_game_type_detected";
+  | "daily_limit_reached"
+  | "unsupported_game_type";
 
 /** Captures a product event. Never send prompts or other sensitive content. */
 export function track(event: AnalyticsEvent, properties?: Record<string, string | number | boolean>) {

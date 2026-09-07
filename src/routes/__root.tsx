@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { I18nProvider } from "../i18n";
+import { initAnalytics } from "@/lib/analytics";
 
 function NotFoundComponent() {
   return (
@@ -156,6 +157,11 @@ function OAuthReturnHandler() {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    // Initialize PostHog analytics on app load
+    initAnalytics();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
