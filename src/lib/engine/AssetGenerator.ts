@@ -442,7 +442,12 @@ export function drawPowerUp(ctx: CanvasRenderingContext2D, e: Entity, palette: P
   ctx.restore();
 }
 
-export function drawBoss(ctx: CanvasRenderingContext2D, e: Entity, palette: Palette, bossType: "giant_robot" | "alien_boss" = "giant_robot") {
+export function drawBoss(
+  ctx: CanvasRenderingContext2D,
+  e: Entity,
+  palette: Palette,
+  bossType: "giant_robot" | "alien_boss" | "monster_king" | "drone_lord" = "giant_robot",
+) {
   ctx.save();
   ctx.shadowColor = palette.enemy;
   ctx.shadowBlur = 20;
@@ -465,10 +470,8 @@ export function drawBoss(ctx: CanvasRenderingContext2D, e: Entity, palette: Pale
       ctx.fill();
       ctx.shadowBlur = 0;
       ctx.fillStyle = palette.enemyAccent;
-      // Armor plates
       ctx.fillRect(e.x + e.w * 0.2, e.y + e.h * 0.3, e.w * 0.2, e.h * 0.15);
       ctx.fillRect(e.x + e.w * 0.6, e.y + e.h * 0.3, e.w * 0.2, e.h * 0.15);
-      // Core
       ctx.beginPath();
       ctx.arc(cx, e.y + e.h * 0.55, e.w * 0.15, 0, Math.PI * 2);
       ctx.fill();
@@ -481,7 +484,6 @@ export function drawBoss(ctx: CanvasRenderingContext2D, e: Entity, palette: Pale
       ctx.fill();
       ctx.shadowBlur = 0;
       ctx.fillStyle = palette.enemyAccent;
-      // Multiple eyes
       for (let i = 0; i < 5; i++) {
         const angle = (Math.PI * 2 * i) / 5 - Math.PI / 2;
         const eyeX = cx + Math.cos(angle) * e.w * 0.2;
@@ -490,11 +492,67 @@ export function drawBoss(ctx: CanvasRenderingContext2D, e: Entity, palette: Pale
         ctx.arc(eyeX, eyeY, e.w * 0.08, 0, Math.PI * 2);
         ctx.fill();
       }
-      // Central eye
       ctx.beginPath();
       ctx.arc(cx, cy, e.w * 0.12, 0, Math.PI * 2);
       ctx.fill();
       break;
+
+    case "monster_king": {
+      // Bulky monster with horns and fangs
+      ctx.beginPath();
+      ctx.moveTo(e.x + e.w * 0.15, e.y + e.h * 0.2);
+      ctx.lineTo(e.x + e.w * 0.3, e.y);
+      ctx.lineTo(e.x + e.w * 0.4, e.y + e.h * 0.15);
+      ctx.lineTo(e.x + e.w * 0.6, e.y + e.h * 0.15);
+      ctx.lineTo(e.x + e.w * 0.7, e.y);
+      ctx.lineTo(e.x + e.w * 0.85, e.y + e.h * 0.2);
+      ctx.lineTo(e.x + e.w, e.y + e.h * 0.5);
+      ctx.lineTo(e.x + e.w * 0.85, e.y + e.h);
+      ctx.lineTo(e.x + e.w * 0.15, e.y + e.h);
+      ctx.lineTo(e.x, e.y + e.h * 0.5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = palette.enemyAccent;
+      // Eyes
+      ctx.beginPath();
+      ctx.arc(cx - e.w * 0.15, cy - e.h * 0.05, e.w * 0.06, 0, Math.PI * 2);
+      ctx.arc(cx + e.w * 0.15, cy - e.h * 0.05, e.w * 0.06, 0, Math.PI * 2);
+      ctx.fill();
+      // Fangs
+      ctx.beginPath();
+      ctx.moveTo(cx - e.w * 0.1, e.y + e.h * 0.7);
+      ctx.lineTo(cx - e.w * 0.05, e.y + e.h * 0.85);
+      ctx.lineTo(cx, e.y + e.h * 0.7);
+      ctx.moveTo(cx, e.y + e.h * 0.7);
+      ctx.lineTo(cx + e.w * 0.05, e.y + e.h * 0.85);
+      ctx.lineTo(cx + e.w * 0.1, e.y + e.h * 0.7);
+      ctx.fill();
+      break;
+    }
+
+    case "drone_lord": {
+      // Large central drone with rotating blades
+      ctx.beginPath();
+      ctx.arc(cx, cy, e.w * 0.35, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = palette.enemyAccent;
+      // Blade arms
+      for (let i = 0; i < 4; i++) {
+        const angle = (Math.PI * 2 * i) / 4;
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(angle);
+        ctx.fillRect(-e.w * 0.05, -e.w * 0.45, e.w * 0.1, e.w * 0.35);
+        ctx.restore();
+      }
+      // Core
+      ctx.beginPath();
+      ctx.arc(cx, cy, e.w * 0.12, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    }
   }
 
   ctx.restore();

@@ -6,6 +6,26 @@ export const GAME_TYPES: GameType[] = ["coin_collector", "dodge", "shooter"];
 export const THEMES: Theme[] = ["forest", "space", "city", "desert", "ice"];
 export const DIFFICULTIES: Difficulty[] = ["easy", "normal", "hard"];
 
+export type WeaponType = "blaster" | "pistol" | "shotgun" | "rifle";
+export type CharacterType = "astronaut" | "ninja" | "soldier" | "robot";
+export type CollectibleType = "coin" | "gem" | "crystal";
+export type ObstacleType = "rock" | "spike" | "meteor" | "barrier";
+export type EnemyType = "robot" | "alien" | "drone" | "monster";
+export type PowerUpType = "health" | "shield" | "speed" | "double_score";
+export type BossType = "giant_robot" | "alien_boss" | "monster_king" | "drone_lord";
+
+/** Encounter / spawn pattern descriptors (derived, not user-facing). */
+export type EncounterStyle =
+  | "balanced"
+  | "aggressive"
+  | "side_pressure"
+  | "mixed"
+  | "elite"
+  | "rush";
+
+export type SpawnPattern = "grid" | "wave" | "stream" | "spread" | "cluster";
+export type CollectiblePattern = "scatter" | "cluster" | "trail" | "risk_reward" | "spread";
+
 /** Structured, serialisable game description. Games are rebuilt from template + config. */
 export interface GameConfig {
   type: GameType;
@@ -23,23 +43,39 @@ export interface GameConfig {
   obstacleSpeed: number;
   levels: number;
   waves: number;
-  weapon: "blaster" | "pistol" | "shotgun" | "rifle";
+  weapon: WeaponType;
   /** Character type for visual representation. */
-  character: "astronaut" | "ninja" | "soldier" | "robot";
+  character: CharacterType;
   /** Collectible type for Coin Collector. */
-  collectibleType: "coin" | "gem" | "crystal";
+  collectibleType: CollectibleType;
   /** Obstacle type for Dodge. */
-  obstacleType: "rock" | "spike" | "meteor" | "barrier";
-  /** Enemy type for Shooter. */
-  enemyType: "robot" | "alien" | "drone" | "monster";
+  obstacleType: ObstacleType;
+  /** Primary enemy type for Shooter. */
+  enemyType: EnemyType;
+  /** Secondary enemy types for composition variety. Empty = single type. */
+  enemyMix: EnemyType[];
   /** Power-ups enabled. */
-  powerUps: ("health" | "shield" | "speed" | "double_score")[];
+  powerUps: PowerUpType[];
   /** Boss configuration. */
   boss: {
     enabled: boolean;
-    type: "giant_robot" | "alien_boss";
+    type: BossType;
     health: number;
   };
+
+  // ── Derived gameplay parameters (not exposed in UI, set by LevelDesignEngine) ──
+  /** How encounters are structured in the shooter. */
+  encounterStyle: EncounterStyle;
+  /** How enemies spawn spatially. */
+  spawnPattern: SpawnPattern;
+  /** Enemy aggression multiplier (0.5 - 2.0). */
+  aggression: number;
+  /** How quickly difficulty ramps between waves/levels (0.5 - 2.0). */
+  progressionRate: number;
+  /** How collectibles are arranged in Coin Collector. */
+  collectiblePattern: CollectiblePattern;
+  /** Whether the game starts with immediate action. */
+  immediateStart: boolean;
 }
 
 export type GameStatus = "ready" | "playing" | "paused" | "game_over" | "level_complete" | "completed";
@@ -82,5 +118,13 @@ export interface Entity {
   hp?: number;
   cooldown?: number;
   damage?: number;
-  powerUpType?: "health" | "shield" | "speed" | "double_score";
+  powerUpType?: PowerUpType;
+  /** Visual variant index for enemy composition. */
+  variant?: number;
+  /** Whether this entity should render with a specific enemy type. */
+  enemyKind?: EnemyType;
+  /** Hit flash timer for feedback. */
+  hitFlash?: number;
+  /** Spawn delay (seconds before the entity becomes active). */
+  spawnDelay?: number;
 }
