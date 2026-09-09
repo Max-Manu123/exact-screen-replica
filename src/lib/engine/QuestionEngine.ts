@@ -10,7 +10,7 @@ import {
   type SemanticResult,
 } from "./SemanticMapper";
 import { LIMITS } from "./LevelDesignEngine";
-import type { Difficulty, GameType, Theme } from "./types";
+import type { Difficulty, EnemyType, GameType, Theme } from "./types";
 import { DIFFICULTIES, THEMES } from "./types";
 
 export type QuestionKey =
