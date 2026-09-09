@@ -229,8 +229,9 @@ export function applyAnswers(mapped: SemanticResult, answers: Answers | undefine
   if (answers.weapon && VALID_WEAPONS.includes(answers.weapon)) next.weapon = answers.weapon as SemanticResult["weapon"];
   if (answers.character && VALID_CHARACTERS.includes(answers.character)) next.character = answers.character as SemanticResult["character"];
   if (answers.enemy_type && VALID_ENEMIES.includes(answers.enemy_type)) {
-    next.enemyType = answers.enemy_type as SemanticResult["enemyType"];
-    if (!next.allEnemyTypes.includes(next.enemyType)) next.allEnemyTypes = [next.enemyType, ...next.allEnemyTypes];
+    const picked = answers.enemy_type as EnemyType;
+    next.enemyType = picked;
+    if (!next.allEnemyTypes.includes(picked)) next.allEnemyTypes = [picked, ...next.allEnemyTypes];
   }
   if (answers.collectible_type && VALID_COLLECTIBLES.includes(answers.collectible_type)) {
     next.collectibleType = answers.collectible_type as SemanticResult["collectibleType"];
