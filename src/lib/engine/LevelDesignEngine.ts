@@ -114,7 +114,7 @@ function deriveProgressionRate(mapped: SemanticResult): number {
 }
 
 /** Derive enemy mix: dominant type + complementary variants. */
-function deriveEnemyMix(mapped: SemanticResult): GameConfig["enemyMix"][] {
+function deriveEnemyMix(mapped: SemanticResult): GameConfig["enemyMix"] {
   if (mapped.allEnemyTypes.length <= 1) {
     // Single type: add complementary variants unless "only" was specified
     if (mapped.onlyEnemies) return [];
@@ -179,7 +179,7 @@ export function designLevel(mapped: SemanticResult): GameConfig {
   const aggression = deriveAggression(mapped);
   const progressionRate = deriveProgressionRate(mapped);
   const collectiblePattern = deriveCollectiblePattern(mapped, seed >> 3);
-  const enemyMix = deriveEnemyMix(mapped) as GameConfig["enemyMix"];
+  const enemyMix = deriveEnemyMix(mapped);
   const bossType = deriveBossType(mapped.enemyType ?? "robot");
   const bossHealth = deriveBossHealth(difficulty);
 

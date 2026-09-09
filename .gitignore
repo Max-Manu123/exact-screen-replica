@@ -31,7 +31,6 @@ dist-ssr
 *.sln
 *.sw?
 
-# Local environment files (never commit)
-.env
-.env.*
-!.env.example
+# Local environment files
+.env.local
+.env.*.local
