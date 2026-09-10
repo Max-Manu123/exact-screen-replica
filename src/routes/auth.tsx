@@ -151,6 +151,13 @@ function AuthPage() {
           {mode === "signin" ? t("auth.signInTitle") : t("auth.signUpTitle")}
         </h1>
 
+        {confirmSent && (
+          <div className="mt-4 rounded-lg border border-primary/40 bg-primary/10 p-3">
+            <p className="text-sm font-semibold text-foreground">{t("auth.confirmEmailTitle")}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{t("auth.confirmEmail")}</p>
+          </div>
+        )}
+
         <form onSubmit={submit} className="mt-5 space-y-3">
           <div className="space-y-1">
             <Label htmlFor="email">{t("auth.email")}</Label>
