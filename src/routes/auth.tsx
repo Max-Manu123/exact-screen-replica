@@ -40,6 +40,7 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [googleAvailable, setGoogleAvailable] = useState(true);
+  const [confirmSent, setConfirmSent] = useState(false);
 
   const goAfterAuth = () => {
     if (isSafeInternalPath(redirect)) {

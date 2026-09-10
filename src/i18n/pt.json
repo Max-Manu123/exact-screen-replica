@@ -82,6 +82,8 @@
     "toSignUp": "Ainda não tem conta? Cadastre-se",
     "toSignIn": "Já tem uma conta? Entrar",
     "signedUp": "Conta criada. Você está conectado.",
+    "confirmEmailTitle": "Conta criada!",
+    "confirmEmail": "Verifique seu e-mail para confirmar sua conta. É necessário confirmar antes de entrar.",
     "or": "ou",
     "invalid": "Informe um e-mail válido e uma senha com pelo menos 6 caracteres."
   },
