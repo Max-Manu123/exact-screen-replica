@@ -104,8 +104,12 @@ function AuthPage() {
         }
         goAfterAuth();
       } else {
-        toast.success(t("auth.signedUp"));
-        track("sign_up");
+        // No session: email confirmation is required before signing in.
+        setConfirmSent(true);
+        setMode("signin");
+        setPassword("");
+        toast.success(t("auth.confirmEmail"));
+        if (mode === "signup") track("sign_up");
       }
     } catch {
       setError(t("common.error"));
