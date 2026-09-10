@@ -82,6 +82,8 @@
     "toSignUp": "No account yet? Sign up",
     "toSignIn": "Already have an account? Sign in",
     "signedUp": "Account created. You're signed in.",
+    "confirmEmailTitle": "Account created!",
+    "confirmEmail": "Please check your email to confirm your account. You need to confirm it before you can sign in.",
     "or": "or",
     "invalid": "Please enter a valid email and a password with at least 6 characters."
   },

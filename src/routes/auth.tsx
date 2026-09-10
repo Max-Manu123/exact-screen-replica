@@ -40,6 +40,7 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [googleAvailable, setGoogleAvailable] = useState(true);
+  const [confirmSent, setConfirmSent] = useState(false);
 
   const goAfterAuth = () => {
     if (isSafeInternalPath(redirect)) {
@@ -79,6 +80,7 @@ function AuthPage() {
     event.preventDefault();
     if (busy) return;
     setError(null);
+    setConfirmSent(false);
     if (!isValidEmail(email) || password.length < 6) {
       setError(t("auth.invalid"));
       return;
@@ -102,8 +104,12 @@ function AuthPage() {
         }
         goAfterAuth();
       } else {
-        toast.success(t("auth.signedUp"));
-        track("sign_up");
+        // No session: email confirmation is required before signing in.
+        setConfirmSent(true);
+        setMode("signin");
+        setPassword("");
+        toast.success(t("auth.confirmEmail"));
+        if (mode === "signup") track("sign_up");
       }
     } catch {
       setError(t("common.error"));
@@ -144,6 +150,13 @@ function AuthPage() {
         <h1 className="mt-4 text-xl font-semibold text-foreground">
           {mode === "signin" ? t("auth.signInTitle") : t("auth.signUpTitle")}
         </h1>
+
+        {confirmSent && (
+          <div className="mt-4 rounded-lg border border-primary/40 bg-primary/10 p-3">
+            <p className="text-sm font-semibold text-foreground">{t("auth.confirmEmailTitle")}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{t("auth.confirmEmail")}</p>
+          </div>
+        )}
 
         <form onSubmit={submit} className="mt-5 space-y-3">
           <div className="space-y-1">

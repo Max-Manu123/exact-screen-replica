@@ -1,4 +1,4 @@
-# Exact Screen Replica
+# GameForge AI
 
 Implement exactly the screenshot and nothing else
 
