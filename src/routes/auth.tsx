@@ -80,6 +80,7 @@ function AuthPage() {
     event.preventDefault();
     if (busy) return;
     setError(null);
+    setConfirmSent(false);
     if (!isValidEmail(email) || password.length < 6) {
       setError(t("auth.invalid"));
       return;
