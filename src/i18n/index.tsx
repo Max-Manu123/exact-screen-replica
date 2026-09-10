@@ -29,7 +29,20 @@ interface I18nValue {
   t: Translate;
 }
 
-const I18nContext = createContext<I18nValue | null>(null);
+/** English-only fallback so components never crash outside the provider. */
+const fallbackValue: I18nValue = {
+  language: "en",
+  setLanguage: () => {},
+  t: (key, vars) => {
+    const raw = resolve(en, key) ?? key;
+    if (!vars) return raw;
+    return raw.replace(/\{(\w+)\}/g, (_, name: string) =>
+      vars[name] === undefined ? `{${name}}` : String(vars[name]),
+    );
+  },
+};
+
+const I18nContext = createContext<I18nValue>(fallbackValue);
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>("en");
@@ -74,7 +87,5 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useI18n(): I18nValue {
-  const ctx = useContext(I18nContext);
-  if (!ctx) throw new Error("useI18n must be used inside I18nProvider");
-  return ctx;
+  return useContext(I18nContext) ?? fallbackValue;
 }
