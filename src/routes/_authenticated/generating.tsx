@@ -37,6 +37,10 @@ function GeneratingPage() {
   const didRun = useRef(false);
 
   const run = () => {
+    if (!prompt) {
+      void navigate({ to: "/create" });
+      return;
+    }
     setStage("running");
     setCompletedStep(-1);
     setErrorMessage(null);
