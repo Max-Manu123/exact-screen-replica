@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { track } from "@/lib/analytics";
 
 const searchSchema = z.object({
-  prompt: z.string().min(1),
+  prompt: z.string().optional(),
   answers: z.string().default("{}"),
 });
 
