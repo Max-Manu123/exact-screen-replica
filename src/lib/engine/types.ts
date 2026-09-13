@@ -28,9 +28,14 @@ export type CollectiblePattern = "scatter" | "cluster" | "trail" | "risk_reward"
 
 /** Structured, serialisable game description. Games are rebuilt from template + config. */
 export interface GameConfig {
+  // ── Core Game Identity (what the game IS) ──
   type: GameType;
   theme: Theme;
   difficulty: Difficulty;
+  /** Character type for visual representation. */
+  character: CharacterType;
+
+  // ── Gameplay Parameters (how the game PLAYS) ──
   /** Player tuning (0.6 - 1.6 speed factor). */
   playerSpeed: number;
   /** Coin Collector / Shooter reward count. */
@@ -43,9 +48,10 @@ export interface GameConfig {
   obstacleSpeed: number;
   levels: number;
   waves: number;
+
+  // ── Genre-Specific Identity ──
+  /** Weapon for Shooter (disabled by default for Collector/Dodge). */
   weapon: WeaponType;
-  /** Character type for visual representation. */
-  character: CharacterType;
   /** Collectible type for Coin Collector. */
   collectibleType: CollectibleType;
   /** Obstacle type for Dodge. */
@@ -76,6 +82,10 @@ export interface GameConfig {
   collectiblePattern: CollectiblePattern;
   /** Whether the game starts with immediate action. */
   immediateStart: boolean;
+
+  // ── Determinism Seed ──
+  /** Seed for deterministic generation (derived from prompt + identity). */
+  seed?: number;
 }
 
 export type GameStatus = "ready" | "playing" | "paused" | "game_over" | "level_complete" | "completed";

@@ -46,7 +46,7 @@ const DEFAULTS = {
   immediateStart: true,
 };
 
-/** Deterministic hash for encounter style selection. */
+/** Deterministic hash for seed generation. */
 function hashString(text: string): number {
   let hash = 0;
   for (let i = 0; i < text.length; i++) {
@@ -55,45 +55,72 @@ function hashString(text: string): number {
   return Math.abs(hash);
 }
 
-/** Derive encounter style from prompt semantics. */
-function deriveEncounterStyle(mapped: SemanticResult, seed: number): EncounterStyle {
+/** Seeded random number generator for deterministic decisions. */
+class SeededRNG {
+  private seed: number;
+
+  constructor(seed: number) {
+    this.seed = seed;
+  }
+
+  /** Generate a random number in [0, 1) */
+  next(): number {
+    this.seed = (this.seed * 9301 + 49297) % 233280;
+    return this.seed / 233280;
+  }
+
+  /** Generate a random integer in [min, max] */
+  range(min: number, max: number): number {
+    return Math.floor(this.next() * (max - min + 1)) + min;
+  }
+
+  /** Pick a random element from an array with fallback */
+  pick<T>(arr: T[], fallback: T): T {
+    if (arr.length === 0) return fallback;
+    const idx = this.range(0, arr.length - 1);
+    return arr[idx] ?? fallback;
+  }
+}
+
+/** Derive encounter style from prompt semantics using seeded RNG. */
+function deriveEncounterStyle(mapped: SemanticResult, rng: SeededRNG): EncounterStyle {
   if (mapped.pacing === "fast") {
     const styles: EncounterStyle[] = ["rush", "aggressive", "side_pressure"];
-    return styles[seed % styles.length]!;
+    return rng.pick(styles, "rush");
   }
   if (mapped.intensity === "high") {
     const styles: EncounterStyle[] = ["aggressive", "elite", "mixed"];
-    return styles[seed % styles.length]!;
+    return rng.pick(styles, "aggressive");
   }
   if (mapped.difficulty === "easy") {
     return "balanced";
   }
   const styles: EncounterStyle[] = ["balanced", "mixed", "side_pressure", "aggressive"];
-  return styles[seed % styles.length]!;
+  return rng.pick(styles, "balanced");
 }
 
-/** Derive spawn pattern from encounter style and enemy type. */
-function deriveSpawnStyle(encounterStyle: EncounterStyle, enemyType: GameConfig["enemyType"], seed: number): SpawnPattern {
+/** Derive spawn pattern from encounter style and enemy type using seeded RNG. */
+function deriveSpawnStyle(encounterStyle: EncounterStyle, enemyType: GameConfig["enemyType"], rng: SeededRNG): SpawnPattern {
   if (encounterStyle === "rush") return "stream";
   if (encounterStyle === "side_pressure") return "spread";
   if (encounterStyle === "elite") return "cluster";
   if (enemyType === "drone") return "spread";
   if (enemyType === "monster") return "cluster";
   const patterns: SpawnPattern[] = ["grid", "wave", "spread"];
-  return patterns[seed % patterns.length]!;
+  return rng.pick(patterns, "grid");
 }
 
-/** Derive collectible layout pattern from prompt. */
-function deriveCollectiblePattern(mapped: SemanticResult, seed: number): CollectiblePattern {
+/** Derive collectible layout pattern from prompt using seeded RNG. */
+function deriveCollectiblePattern(mapped: SemanticResult, rng: SeededRNG): CollectiblePattern {
   if (mapped.difficulty === "hard") {
     const patterns: CollectiblePattern[] = ["risk_reward", "trail", "cluster"];
-    return patterns[seed % patterns.length]!;
+    return rng.pick(patterns, "risk_reward");
   }
   if (mapped.difficulty === "easy") {
     return "scatter";
   }
   const patterns: CollectiblePattern[] = ["scatter", "cluster", "trail", "spread"];
-  return patterns[seed % patterns.length]!;
+  return rng.pick(patterns, "scatter");
 }
 
 /** Derive aggression from difficulty + pacing. */
@@ -172,13 +199,15 @@ export function designLevel(mapped: SemanticResult): GameConfig {
     enemies = Math.max(LIMITS.enemies.min, Math.round(enemies / waves));
   }
 
+  // Create seed from prompt + identity for determinism
   const seed = hashString(JSON.stringify({ type, theme: mapped.theme, difficulty, weapon: mapped.weapon, enemyType: mapped.enemyType, pacing: mapped.pacing }));
+  const rng = new SeededRNG(seed);
 
-  const encounterStyle = deriveEncounterStyle(mapped, seed);
-  const spawnPattern = deriveSpawnStyle(encounterStyle, mapped.enemyType ?? "robot", seed >> 2);
+  const encounterStyle = deriveEncounterStyle(mapped, rng);
+  const spawnPattern = deriveSpawnStyle(encounterStyle, mapped.enemyType ?? "robot", rng);
   const aggression = deriveAggression(mapped);
   const progressionRate = deriveProgressionRate(mapped);
-  const collectiblePattern = deriveCollectiblePattern(mapped, seed >> 3);
+  const collectiblePattern = deriveCollectiblePattern(mapped, rng);
   const enemyMix = deriveEnemyMix(mapped);
   const bossType = deriveBossType(mapped.enemyType ?? "robot");
   const bossHealth = deriveBossHealth(difficulty);
@@ -215,6 +244,56 @@ export function designLevel(mapped: SemanticResult): GameConfig {
     progressionRate,
     collectiblePattern,
     immediateStart: true,
+    seed,
+  };
+}
+
+/** Recalculate derived fields when config changes (e.g., from editor). */
+export function recalculateDerivedFields(config: GameConfig): GameConfig {
+  // Create a seed if not present
+  const seed = config.seed ?? hashString(JSON.stringify({ type: config.type, theme: config.theme, difficulty: config.difficulty, weapon: config.weapon, enemyType: config.enemyType }));
+  const rng = new SeededRNG(seed);
+
+  // Recalculate encounter style based on current config
+  const encounterStyle = deriveEncounterStyle(
+    { type: config.type, difficulty: config.difficulty, pacing: config.aggression > 1.2 ? "fast" : config.aggression < 0.8 ? "slow" : null, intensity: config.aggression > 1.3 ? "high" : null } as SemanticResult,
+    rng
+  );
+
+  // Recalculate spawn pattern based on encounter style and enemy type
+  const spawnPattern = deriveSpawnStyle(encounterStyle, config.enemyType, rng);
+
+  // Recalculate collectible pattern based on difficulty
+  const collectiblePattern = deriveCollectiblePattern(
+    { type: config.type, difficulty: config.difficulty } as SemanticResult,
+    rng
+  );
+
+  // Recalculate aggression based on difficulty
+  const aggression = config.aggression;
+
+  // Recalculate progression rate based on difficulty
+  const progressionRate = deriveProgressionRate({ difficulty: config.difficulty } as SemanticResult);
+
+  // Recalculate boss type based on enemy type
+  const bossType = deriveBossType(config.enemyType);
+
+  // Recalculate boss health based on difficulty
+  const bossHealth = deriveBossHealth(config.difficulty);
+
+  return {
+    ...config,
+    seed,
+    encounterStyle,
+    spawnPattern,
+    aggression,
+    progressionRate,
+    collectiblePattern,
+    boss: {
+      ...config.boss,
+      type: bossType,
+      health: bossHealth,
+    },
   };
 }
 
@@ -237,7 +316,7 @@ export function sanitizeConfig(input: unknown): GameConfig {
     }
   }
 
-  return {
+  const sanitized = {
     type,
     theme: THEMES.includes(raw.theme as never) ? (raw.theme as GameConfig["theme"]) : "forest",
     difficulty,
@@ -299,5 +378,9 @@ export function sanitizeConfig(input: unknown): GameConfig {
       ? (raw.collectiblePattern as CollectiblePattern)
       : DEFAULTS.collectiblePattern,
     immediateStart: typeof raw.immediateStart === "boolean" ? raw.immediateStart : DEFAULTS.immediateStart,
+    seed: typeof raw.seed === "number" && Number.isFinite(raw.seed) ? raw.seed : undefined,
   };
+
+  // Recalculate derived fields for consistency
+  return recalculateDerivedFields(sanitized);
 }

@@ -167,31 +167,34 @@ export function buildQuestions(prompt: string, mapped: SemanticResult): Question
 
   if (mapped.type === "shooter") {
     // Priority for shooter: weapon > enemy type > theme > difficulty > enemy count
-    if (!mentions(text, WEAPON_HINTS)) questions.push(WEAPON_QUESTION);
+    // Only ask if not already specified in prompt
+    if (mapped.weapon === null && !mentions(text, WEAPON_HINTS)) questions.push(WEAPON_QUESTION);
     if (mapped.enemyType === null && !mentions(text, ENEMY_HINTS)) questions.push(ENEMY_TYPE_QUESTION);
-    if (!mentions(text, THEME_HINTS)) questions.push(THEME_QUESTION);
-    if (!mentions(text, DIFFICULTY_HINTS)) questions.push(DIFFICULTY_QUESTION);
-    if (mapped.enemies === null) questions.push(countQuestion("enemies", [4, 8, 12]));
+    if (mapped.theme === null && !mentions(text, THEME_HINTS)) questions.push(THEME_QUESTION);
+    if (mapped.difficulty === null && !mentions(text, DIFFICULTY_HINTS)) questions.push(DIFFICULTY_QUESTION);
+    // Only ask for count if not specified and we have room
+    if (mapped.enemies === null && questions.length < 3) questions.push(countQuestion("enemies", [4, 8, 12]));
 
-    // Ask for enemy scope if shooter has enemies but scope is ambiguous
-    if (mapped.enemies !== null && mapped.enemiesScope === null) {
+    // Ask for enemy scope only if shooter has enemies but scope is ambiguous AND we have room
+    if (mapped.enemies !== null && mapped.enemiesScope === null && questions.length < 3) {
       questions.push(ENEMIES_SCOPE_QUESTION);
     }
   } else if (mapped.type === "dodge") {
     // Priority for dodge: obstacle type > theme > difficulty > obstacle count
     if (mapped.obstacleType === null && !mentions(text, OBSTACLE_HINTS)) questions.push(OBSTACLE_TYPE_QUESTION);
-    if (!mentions(text, THEME_HINTS)) questions.push(THEME_QUESTION);
-    if (!mentions(text, DIFFICULTY_HINTS)) questions.push(DIFFICULTY_QUESTION);
-    if (mapped.obstacles === null) questions.push(countQuestion("obstacles", [5, 10, 15]));
+    if (mapped.theme === null && !mentions(text, THEME_HINTS)) questions.push(THEME_QUESTION);
+    if (mapped.difficulty === null && !mentions(text, DIFFICULTY_HINTS)) questions.push(DIFFICULTY_QUESTION);
+    if (mapped.obstacles === null && questions.length < 3) questions.push(countQuestion("obstacles", [5, 10, 15]));
   } else {
     // coin_collector
     // Priority: collectible type > theme > difficulty > coin count
     if (mapped.collectibleType === null && !mentions(text, COLLECTIBLE_HINTS)) questions.push(COLLECTIBLE_TYPE_QUESTION);
-    if (!mentions(text, THEME_HINTS)) questions.push(THEME_QUESTION);
-    if (!mentions(text, DIFFICULTY_HINTS)) questions.push(DIFFICULTY_QUESTION);
-    if (mapped.coins === null) questions.push(countQuestion("coins", [10, 20, 30]));
+    if (mapped.theme === null && !mentions(text, THEME_HINTS)) questions.push(THEME_QUESTION);
+    if (mapped.difficulty === null && !mentions(text, DIFFICULTY_HINTS)) questions.push(DIFFICULTY_QUESTION);
+    if (mapped.coins === null && questions.length < 3) questions.push(countQuestion("coins", [10, 20, 30]));
   }
 
+  // Never ask more than 3 questions
   return questions.slice(0, 3);
 }
 

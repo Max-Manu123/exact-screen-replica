@@ -114,10 +114,24 @@ export class CoinCollectorGame extends GameEngine {
   private collectFlashes: { x: number; y: number; t: number }[] = [];
   private scorePopups: { x: number; y: number; text: string; t: number; vy: number }[] = [];
   private screenShake = 0;
+  // World dimensions (larger than screen for exploration)
+  private worldWidth = 0;
+  private worldHeight = 0;
+  // Camera offset for following player
+  private cameraX = 0;
+  private cameraY = 0;
 
   protected setupLevel(): void {
     const size = 30;
-    this.scene.player = Scene.entity(this.width / 2 - size / 2, this.height / 2 - size / 2, size, size);
+    // World is 2-3x larger than screen for exploration
+    this.worldWidth = this.width * (2 + this.stats.level * 0.3);
+    this.worldHeight = this.height * (2 + this.stats.level * 0.3);
+    
+    // Player starts in center of world
+    this.scene.player = Scene.entity(this.worldWidth / 2 - size / 2, this.worldHeight / 2 - size / 2, size, size);
+    
+    // Initialize health system (3 lives for Collector)
+    this.stats.lives = 3;
 
     const total = coinsForLevel(this.config, this.stats.level);
     this.stats.coinsTotal = total;
@@ -126,12 +140,12 @@ export class CoinCollectorGame extends GameEngine {
     this.scorePopups = [];
     this.screenShake = 0;
 
-    // Generate intentional coin layout
+    // Generate intentional coin layout across the larger world
     const positions = generateLayout(
       this.config.collectiblePattern,
       total,
-      this.width,
-      this.height,
+      this.worldWidth,
+      this.worldHeight,
       this.stats.level,
     );
 
@@ -146,19 +160,23 @@ export class CoinCollectorGame extends GameEngine {
     for (let i = 0; i < blockers; i += 1) {
       const ow = 36 + hashNum(i * 73 + this.stats.level) * 70;
       const oh = 16 + hashNum(i * 89 + this.stats.level) * 20;
-      let ox = hashNum(i * 97 + this.stats.level * 3) * Math.max(1, this.width - ow);
-      let oy = hashNum(i * 101 + this.stats.level * 5) * Math.max(1, this.height - oh);
+      let ox = hashNum(i * 97 + this.stats.level * 3) * Math.max(1, this.worldWidth - ow);
+      let oy = hashNum(i * 101 + this.stats.level * 5) * Math.max(1, this.worldHeight - oh);
 
       // Avoid placing on top of coins
       let attempts = 0;
       while (attempts < 5 && this.overlapsCoins(ox, oy, ow, oh)) {
-        ox = hashNum(i * 103 + attempts * 7 + this.stats.level) * Math.max(1, this.width - ow);
-        oy = hashNum(i * 107 + attempts * 11 + this.stats.level) * Math.max(1, this.height - oh);
+        ox = hashNum(i * 103 + attempts * 7 + this.stats.level) * Math.max(1, this.worldWidth - ow);
+        oy = hashNum(i * 107 + attempts * 11 + this.stats.level) * Math.max(1, this.worldHeight - oh);
         attempts++;
       }
 
       this.scene.obstacles.push(Scene.entity(ox, oy, ow, oh));
     }
+
+    // Reset camera
+    this.cameraX = 0;
+    this.cameraY = 0;
   }
 
   private overlapsCoins(x: number, y: number, w: number, h: number): boolean {
@@ -202,16 +220,23 @@ export class CoinCollectorGame extends GameEngine {
     const prevY = player.y;
     player.x += dx;
     player.y += dy;
-    this.clampToBoard(player);
 
+    // Clamp to world bounds (not screen bounds)
+    player.x = Math.max(0, Math.min(this.worldWidth - player.w, player.x));
+    player.y = Math.max(0, Math.min(this.worldHeight - player.h, player.y));
+
+    // Obstacle collision
     for (const obstacle of this.scene.obstacles) {
       if (rectsOverlap(player, obstacle)) {
         player.x = prevX;
         player.y = prevY;
+        // Obstacles cause damage in Collector
+        this.takeDamage();
         break;
       }
     }
 
+    // Coin collection
     for (const coin of this.scene.coins) {
       if (!coin.alive) continue;
       if (rectsOverlap(player, coin)) {
@@ -234,7 +259,34 @@ export class CoinCollectorGame extends GameEngine {
     }
     this.scene.coins = this.scene.coins.filter((coin) => coin.alive);
 
+    // Update camera to follow player (smooth lerp)
+    const targetCameraX = player.x - this.width / 2 + player.w / 2;
+    const targetCameraY = player.y - this.height / 2 + player.h / 2;
+    this.cameraX += (targetCameraX - this.cameraX) * 0.1;
+    this.cameraY += (targetCameraY - this.cameraY) * 0.1;
+
+    // Clamp camera to world bounds
+    this.cameraX = Math.max(0, Math.min(this.worldWidth - this.width, this.cameraX));
+    this.cameraY = Math.max(0, Math.min(this.worldHeight - this.height, this.cameraY));
+
+    // Victory condition: collect all coins
     if (this.stats.coins >= this.stats.coinsTotal) this.completeLevel();
+  }
+
+  private takeDamage(): void {
+    if (this.stats.shielded) {
+      this.stats.shielded = false;
+      this.stats.shieldTimer = 0;
+      this.screenShake = 0.15;
+      return;
+    }
+    
+    this.stats.lives -= 1;
+    this.screenShake = 0.3;
+    
+    if (this.stats.lives <= 0) {
+      this.gameOver();
+    }
   }
 
   protected renderWorld(): void {
@@ -245,6 +297,10 @@ export class CoinCollectorGame extends GameEngine {
       ctx.save();
       ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
     }
+
+    // Apply camera offset for exploration
+    ctx.save();
+    ctx.translate(-this.cameraX, -this.cameraY);
 
     for (const obstacle of this.scene.obstacles) drawObstacle(ctx, obstacle, this.palette, this.config.obstacleType);
     for (const coin of this.scene.coins) drawCoin(ctx, coin, this.palette, this.elapsed * 4 + coin.x, this.config.collectibleType);
@@ -272,7 +328,17 @@ export class CoinCollectorGame extends GameEngine {
       ctx.restore();
     }
 
+    ctx.restore();
+
     if (this.screenShake > 0) ctx.restore();
+
+    // Draw world bounds indicator (optional visual cue)
+    ctx.save();
+    ctx.strokeStyle = this.palette.hud;
+    ctx.globalAlpha = 0.2;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(0, 0, this.width, this.height);
+    ctx.restore();
 
     void RULES;
   }

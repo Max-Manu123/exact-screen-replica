@@ -1,5 +1,6 @@
 import { BackgroundRenderer } from "./BackgroundRenderer";
 import { paletteFor, type Palette } from "./AssetGenerator";
+import { sanitizeConfig, recalculateDerivedFields } from "./LevelDesignEngine";
 import { OBJECTIVE_KEY } from "./GameRulesEngine";
 import { Scene } from "./Scene";
 import type { GameConfig, GameHooks, GameStats, GameStatus, ObjectiveState } from "./types";
@@ -295,18 +296,14 @@ export abstract class GameEngine {
     this.setupLevel();
   }
 
-  /** Applies a new config (editor) and rebuilds the game from template + config. */
-  applyConfig(config: GameConfig) {
-    this.config = config;
-    this.palette = paletteFor(config.theme);
-    this.background.setTheme(config.theme);
-    this.stats.levels = config.levels;
-    this.stats.waves = config.waves;
-    this.stopLoop();
-    this.transition = null;
-    this.resetGame();
-    this.setStatus("ready");
-    this.emitStats();
+  /** Apply a new config (e.g., from the editor). Sanitizes, recalculates derived fields, and restarts the level. */
+  applyConfig(newConfig: Partial<GameConfig>) {
+    const merged = { ...this.config, ...newConfig };
+    const sanitized = sanitizeConfig(merged);
+    // Recalculate derived fields to ensure consistency after config changes
+    const withDerivedFields = recalculateDerivedFields(sanitized);
+    this.config = withDerivedFields;
+    this.restart();
     this.render();
   }
 

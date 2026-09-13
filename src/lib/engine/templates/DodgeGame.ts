@@ -31,17 +31,25 @@ export class DodgeGame extends GameEngine {
   private screenShake = 0;
   private recentLanes: number[] = [];
   private patternSeed = 0;
+  // Dodge is arena-based - no exploration, no shooting
+  private readonly isArena = true;
 
   protected setupLevel(): void {
     const size = 30;
+    // Player starts at bottom center of arena
     this.scene.player = Scene.entity(this.width / 2 - size / 2, this.height - size - 18, size, size);
     this.spawnTimer = 0.3; // First obstacle very quickly for immediate action
     this.stats.coinsTotal = 0;
-    this.levelTarget = 12 + this.stats.level * 6;
+    // Survival target: 12-30 seconds per level based on difficulty
+    const baseTime = this.config.difficulty === "hard" ? 18 : this.config.difficulty === "easy" ? 8 : 12;
+    this.levelTarget = baseTime + this.stats.level * 6;
     this.levelStart = this.elapsed;
     this.screenShake = 0;
     this.recentLanes = [];
     this.patternSeed = Math.floor(this.elapsed * 7) + this.stats.level * 13;
+    
+    // Dodge has 3 lives (more forgiving than shooter)
+    this.stats.lives = 3;
   }
 
   private spawnObstacle() {
@@ -164,7 +172,7 @@ export class DodgeGame extends GameEngine {
       if (this.stats.speedTimer <= 0) this.stats.speedBoost = false;
     }
 
-    // Spawn obstacles
+    // Spawn obstacles with intensity progression
     const spawnInterval = Math.max(0.18, 0.95 / (ramp * (0.6 + this.config.obstacles / 12)));
     this.spawnTimer -= dt;
     if (this.spawnTimer <= 0) {
@@ -185,8 +193,14 @@ export class DodgeGame extends GameEngine {
           obstacle.alive = false;
           this.screenShake = 0.15;
         } else {
-          this.gameOver();
-          return;
+          // Dodge uses lives instead of instant game over
+          this.stats.lives -= 1;
+          this.screenShake = 0.3;
+          obstacle.alive = false;
+          if (this.stats.lives <= 0) {
+            this.gameOver();
+            return;
+          }
         }
       }
     }
@@ -195,6 +209,7 @@ export class DodgeGame extends GameEngine {
     this.stats.score += RULES.survivalScorePerSecond * dt;
     this.stats.score = Math.round(this.stats.score);
 
+    // Victory: survive for the target time
     if (this.elapsed - this.levelStart >= this.levelTarget) this.completeLevel();
   }
 
