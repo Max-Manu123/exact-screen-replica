@@ -13,43 +13,21 @@ export function semanticToGameSpec(result: SemanticResult, seed?: number): GameS
   const character = result.character ?? defaultCharacter(result.type);
   const difficulty = result.difficulty;
   const pacing = result.pacing ?? (difficulty === "hard" ? "fast" : "normal");
-
-  const enemies = result.allEnemyTypes.length > 0
-    ? result.allEnemyTypes
-    : result.enemyType
-      ? [result.enemyType]
-      : [];
-
-  const enemySpecs = enemies.map((enemyType, index) =>
-    createEnemySpec(enemyType, result, index),
-  );
+  const enemies = result.allEnemyTypes.length > 0 ? result.allEnemyTypes : result.enemyType ? [result.enemyType] : [];
+  const enemySpecs = enemies.map((enemyType, index) => createEnemySpec(enemyType, result, index));
 
   return {
-    identity: {
-      type: result.type,
-      theme: result.theme,
-      difficulty,
-      character,
-    },
-
+    identity: { type: result.type, theme: result.theme, difficulty, character },
     objective: {
       type: objectiveFor(result.type),
       target: result.type === "coin_collector" ? result.coins ?? undefined : undefined,
     },
-
     player: {
       movement: movementFor(character, difficulty, result),
       health: difficulty === "hard" ? 2 : difficulty === "easy" ? 4 : 3,
     },
-
-    combat: result.type === "shooter"
-      ? combatFor(result)
-      : undefined,
-
-    enemies: enemySpecs.length > 0
-      ? { types: enemySpecs }
-      : undefined,
-
+    combat: result.type === "shooter" ? combatFor(result) : undefined,
+    enemies: enemySpecs.length > 0 ? { types: enemySpecs } : undefined,
     encounter: {
       spawnPattern: spawnPatternFor(result),
       pacing,
@@ -57,7 +35,6 @@ export function semanticToGameSpec(result: SemanticResult, seed?: number): GameS
       waves: result.type === "shooter" ? 5 : 1,
       progressionRate: progressionFor(result),
     },
-
     boss: result.type === "shooter"
       ? {
           enabled: result.bossEnabled ?? false,
@@ -65,7 +42,6 @@ export function semanticToGameSpec(result: SemanticResult, seed?: number): GameS
           health: difficulty === "hard" ? 20 : difficulty === "easy" ? 12 : 16,
         }
       : undefined,
-
     collectibles: result.type === "coin_collector"
       ? {
           type: result.collectibleType ?? "coin",
@@ -73,30 +49,23 @@ export function semanticToGameSpec(result: SemanticResult, seed?: number): GameS
           pattern: result.pacing === "fast" ? "trail" : "scatter",
         }
       : undefined,
-
     seed: resolvedSeed,
   };
 }
 
 function defaultCharacter(type: GameType) {
   switch (type) {
-    case "shooter":
-      return "soldier" as const;
-    case "dodge":
-      return "ninja" as const;
-    case "coin_collector":
-      return "astronaut" as const;
+    case "shooter": return "soldier" as const;
+    case "dodge": return "ninja" as const;
+    case "coin_collector": return "astronaut" as const;
   }
 }
 
 function objectiveFor(type: GameType): GameSpec["objective"]["type"] {
   switch (type) {
-    case "coin_collector":
-      return "collect";
-    case "dodge":
-      return "survive";
-    case "shooter":
-      return "eliminate";
+    case "coin_collector": return "collect";
+    case "dodge": return "survive";
+    case "shooter": return "eliminate";
   }
 }
 
@@ -105,13 +74,7 @@ function movementFor(
   difficulty: GameSpec["identity"]["difficulty"],
   result: SemanticResult,
 ): GameSpec["player"]["movement"] {
-  const characterSpeed = {
-    astronaut: 1,
-    ninja: 1.18,
-    soldier: 1.05,
-    robot: 0.92,
-  }[character];
-
+  const characterSpeed = { astronaut: 1, ninja: 1.18, soldier: 1.05, robot: 0.92 }[character];
   const difficultySpeed = difficulty === "hard" ? 1.08 : difficulty === "easy" ? 0.94 : 1;
   const pacingSpeed = result.pacing === "fast" ? 1.1 : result.pacing === "slow" ? 0.9 : 1;
   const speed = characterSpeed * difficultySpeed * pacingSpeed;
@@ -121,9 +84,7 @@ function movementFor(
     acceleration: character === "ninja" ? 18 : 14,
     maxSpeed: 260 * speed,
     friction: character === "robot" ? 0.86 : 0.9,
-    dash: character === "ninja"
-      ? { enabled: true, speed: 520, cooldown: 1.5 }
-      : { enabled: false, speed: 0, cooldown: 0 },
+    dash: character === "ninja" ? { enabled: true, speed: 520, cooldown: 1.5 } : { enabled: false, speed: 0, cooldown: 0 },
   };
 }
 
@@ -135,9 +96,6 @@ function combatFor(result: SemanticResult): NonNullable<GameSpec["combat"]> {
     shotgun: { damage: 1, fireRate: 1.5, projectileSpeed: 300, spread: 0.24, precision: 0.55 },
     rifle: { damage: 2.5, fireRate: 2, projectileSpeed: 500, spread: 0.025, precision: 0.96 },
   }[weapon];
-
-  // "sniper" is already recognized as a rifle by SemanticMapper. Treat a
-  // slow/tactical prompt as a precision profile without inventing a new weapon.
   const sniperProfile = weapon === "rifle" && result.pacing === "slow";
 
   return {
@@ -150,18 +108,13 @@ function combatFor(result: SemanticResult): NonNullable<GameSpec["combat"]> {
   };
 }
 
-function createEnemySpec(
-  type: EnemyType,
-  result: SemanticResult,
-  index: number,
-): EnemySpec {
+function createEnemySpec(type: EnemyType, result: SemanticResult, index: number): EnemySpec {
   const base = {
     robot: { behavior: "chase" as const, health: 1, speed: 1, damage: 1, attackCooldown: 1.2 },
     alien: { behavior: "swarm" as const, health: 1, speed: 1.2, damage: 1, attackCooldown: 1 },
     drone: { behavior: "ranged" as const, health: 0.5, speed: 1.5, damage: 1, attackCooldown: 2 },
     monster: { behavior: "charge" as const, health: 2, speed: 0.7, damage: 2, attackCooldown: 1.8 },
   }[type];
-
   const aggressive = result.intensity === "high" || result.difficulty === "hard";
   const speedMultiplier = aggressive ? 1.12 : 1;
 
@@ -175,7 +128,7 @@ function createEnemySpec(
 
 function spawnPatternFor(result: SemanticResult): GameSpec["encounter"]["spawnPattern"] {
   if (result.pacing === "fast") return "stream";
-  if (result.allEnemyTypes.length >= 2) return "mixed";
+  if (result.allEnemyTypes.length >= 2) return "cluster";
   if (result.intensity === "high") return "wave";
   return "spread";
 }
@@ -196,23 +149,16 @@ function progressionFor(result: SemanticResult): number {
 function bossFor(result: SemanticResult): GameSpec["boss"]["type"] {
   const primary = result.enemyType ?? result.allEnemyTypes[0];
   switch (primary) {
-    case "robot":
-      return "giant_robot";
-    case "alien":
-      return "alien_boss";
-    case "monster":
-      return "monster_king";
-    case "drone":
-      return "drone_lord";
-    default:
-      return "giant_robot";
+    case "robot": return "giant_robot";
+    case "alien": return "alien_boss";
+    case "monster": return "monster_king";
+    case "drone": return "drone_lord";
+    default: return "giant_robot";
   }
 }
 
 function hashString(text: string): number {
   let hash = 0;
-  for (let i = 0; i < text.length; i++) {
-    hash = ((hash << 5) - hash + text.charCodeAt(i)) | 0;
-  }
+  for (let i = 0; i < text.length; i++) hash = ((hash << 5) - hash + text.charCodeAt(i)) | 0;
   return Math.abs(hash) || 1;
 }
