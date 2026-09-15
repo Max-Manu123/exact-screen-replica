@@ -382,7 +382,8 @@ export class ShooterGame extends GameEngine {
     }
   }
 
-  protected renderWorld(ctx: CanvasRenderingContext2D): void {
+  protected renderWorld(): void {
+    const ctx = this.ctx;
     const shakeX = this.screenShake > 0 ? (Math.random() - 0.5) * this.screenShake * 8 : 0;
     const shakeY = this.screenShake > 0 ? (Math.random() - 0.5) * this.screenShake * 8 : 0;
     ctx.save();
