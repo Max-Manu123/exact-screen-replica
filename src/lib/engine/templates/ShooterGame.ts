@@ -28,13 +28,7 @@ function intentStatsFor(config: GameConfig, enemyKind: EnemyType) {
   return config.gameIntent?.enemies.find((enemy) => enemy.type === enemyKind);
 }
 
-/** Encounter formation patterns per wave. */
-function formationForWave(
-  config: GameConfig,
-  wave: number,
-  count: number,
-  width: number,
-): { x: number; y: number; vx: number; vy: number }[] {
+function formationForWave(config: GameConfig, wave: number, count: number, width: number): { x: number; y: number; vx: number; vy: number }[] {
   const positions: { x: number; y: number; vx: number; vy: number }[] = [];
   const style = config.encounterStyle;
   const pattern = config.spawnPattern;
@@ -53,7 +47,7 @@ function formationForWave(
       const clusterIdx = Math.floor(i / 4);
       const within = i % 4;
       const cx = (width / (clusters + 1)) * (clusterIdx + 1);
-      positions.push({ x: cx + (within % 2) * 40 - 20, y: -100 - clusterIdx * 70 - Math.floor(within / 2) * 45, vx: (20 + Math.random() * 30) * (Math.random() > 0.5 ? 1 : -1) * ramp, vy: (15 + Math.random() * 20) * ramp });
+      positions.push({ x: cx + (within % 2) * 40 - 20, y: -55 - clusterIdx * 45 - Math.floor(within / 2) * 35, vx: (25 + Math.random() * 30) * (Math.random() > 0.5 ? 1 : -1) * ramp, vy: (75 + Math.random() * 30) * ramp });
     }
   } else if (style === "mixed") {
     const sideCount = Math.floor(count / 3);
@@ -96,6 +90,7 @@ export class ShooterGame extends GameEngine {
   private scorePopups: { x: number; y: number; text: string; t: number; vy: number }[] = [];
   private lowHealthTriggered = false;
   private doingWellTimer = 0;
+  private damageCooldown = 0;
 
   protected setupLevel(): void {
     const size = 32;
@@ -104,6 +99,7 @@ export class ShooterGame extends GameEngine {
     this.stats.wave = 1;
     this.stats.coinsTotal = this.config.enemies * this.config.waves;
     this.fireCooldown = 0;
+    this.damageCooldown = 0;
     this.powerUpSpawnTimer = 4;
     this.boss = null;
     this.screenShake = 0;
@@ -137,11 +133,7 @@ export class ShooterGame extends GameEngine {
         cooldown: intent?.attackCooldown ?? 2,
         enemyKind,
         behavior: behaviorFor(this.config, enemyKind),
-        spawnDelay: this.config.gameIntent?.pacing === "slow"
-          ? 1.8
-          : this.config.gameIntent?.pacing === "fast"
-            ? 0.8
-            : 1.2,
+        spawnDelay: this.config.gameIntent?.pacing === "slow" ? 0.35 : this.config.gameIntent?.pacing === "fast" ? 0.15 : 0.2,
       });
       this.scene.enemies.push(enemy);
     }
@@ -155,9 +147,23 @@ export class ShooterGame extends GameEngine {
     this.scene.enemies.push(boss);
   }
 
+  private damagePlayer(damage: number): void {
+    if (this.damageCooldown > 0 || this.stats.lives <= 0) return;
+    if (this.stats.shielded) {
+      this.stats.shieldTimer = Math.max(0, this.stats.shieldTimer - 1);
+      this.damageCooldown = 0.35;
+      return;
+    }
+    this.stats.lives = Math.max(0, this.stats.lives - (damage > 1.5 ? 2 : 1));
+    this.damageCooldown = 0.65;
+    this.screenShake = Math.max(this.screenShake, 0.25);
+    if (this.stats.lives <= 0) this.gameOver();
+  }
+
   protected updateWorld(dt: number): void {
     const player = this.scene.player;
     if (!player) return;
+    if (this.damageCooldown > 0) this.damageCooldown = Math.max(0, this.damageCooldown - dt);
     if (this.screenShake > 0) this.screenShake = Math.max(0, this.screenShake - dt * 3);
     this.hitFlashes = this.hitFlashes.filter((f) => { f.t -= dt; return f.t > 0; });
     this.scorePopups = this.scorePopups.filter((p) => { p.y += p.vy * dt; p.t -= dt; return p.t > 0; });
@@ -227,18 +233,10 @@ export class ShooterGame extends GameEngine {
     for (const enemyBullet of this.scene.enemyBullets) {
       enemyBullet.x += enemyBullet.vx * dt;
       enemyBullet.y += enemyBullet.vy * dt;
-      if (enemyBullet.y < -40 || enemyBullet.y > this.height + 40 || enemyBullet.x < -40 || enemyBullet.x > this.width + 40) {
-        enemyBullet.alive = false;
-      }
+      if (enemyBullet.y < -40 || enemyBullet.y > this.height + 40 || enemyBullet.x < -40 || enemyBullet.x > this.width + 40) enemyBullet.alive = false;
       if (enemyBullet.alive && rectsOverlap(enemyBullet, player)) {
         enemyBullet.alive = false;
-        const damage = enemyBullet.damage ?? 1;
-        if (this.stats.shielded) {
-          this.stats.shieldTimer = Math.max(0, this.stats.shieldTimer - 1);
-        } else {
-          this.stats.lives -= damage > 1.5 ? 2 : 1;
-          this.screenShake = Math.max(this.screenShake, 0.25);
-        }
+        this.damagePlayer(enemyBullet.damage ?? 1);
       }
     }
     this.scene.enemyBullets = this.scene.enemyBullets.filter((b) => b.alive);
@@ -246,11 +244,7 @@ export class ShooterGame extends GameEngine {
     for (const enemy of this.scene.enemies) {
       if (enemy.spawnDelay !== undefined && enemy.spawnDelay > 0) {
         enemy.spawnDelay -= dt;
-        if (enemy.spawnDelay > 0) {
-          enemy.vx *= 0.96;
-          enemy.vy *= 0.96;
-          continue;
-        }
+        if (enemy.spawnDelay > 0) continue;
       }
 
       const enemyKind = enemy.enemyKind ?? this.config.enemyType;
@@ -298,7 +292,6 @@ export class ShooterGame extends GameEngine {
               enemy.vy += (dy / distance) * 15 * dt;
             }
             enemy.vx += Math.sin(enemy.y * 0.025) * 22 * dt;
-
             enemy.cooldown = (enemy.cooldown ?? intent?.attackCooldown ?? 2) - dt;
             const attackRange = 150 + Math.min(250, enemySpeed * 100);
             if (enemy.cooldown <= 0 && distance >= 150 && distance <= attackRange) {
@@ -325,7 +318,6 @@ export class ShooterGame extends GameEngine {
           default:
             break;
         }
-
         const maxSpeed = 110 * enemySpeed;
         const currentSpeed = Math.hypot(enemy.vx, enemy.vy);
         if (currentSpeed > maxSpeed) {
@@ -341,9 +333,12 @@ export class ShooterGame extends GameEngine {
       if (enemy === this.boss) {
         if (enemy.x <= 0 || enemy.x + enemy.w >= this.width) { enemy.vx *= -1; enemy.x = Math.max(0, Math.min(this.width - enemy.w, enemy.x)); }
         if (enemy.y <= 20 || enemy.y >= this.height * 0.4) { enemy.vy *= -1; enemy.y = Math.max(20, Math.min(this.height * 0.4, enemy.y)); }
-      } else {
-        if (enemy.x <= 0 || enemy.x + enemy.w >= this.width) { enemy.vx *= -0.7; enemy.x = Math.max(0, Math.min(this.width - enemy.w, enemy.x)); }
-        if (enemy.y > this.height + 50) enemy.alive = false;
+      } else if (enemy.y > this.height + 50) {
+        enemy.alive = false;
+        this.waveEnemiesLeft = Math.max(0, this.waveEnemiesLeft - 1);
+      } else if (enemy.x <= 0 || enemy.x + enemy.w >= this.width) {
+        enemy.vx *= -0.7;
+        enemy.x = Math.max(0, Math.min(this.width - enemy.w, enemy.x));
       }
 
       for (const bullet of this.scene.bullets) {
@@ -374,14 +369,9 @@ export class ShooterGame extends GameEngine {
 
       if (enemy.alive && rectsOverlap(enemy, player)) {
         const damage = intent?.damage ?? 1;
-        if (this.stats.shielded) {
-          enemy.alive = false;
-          this.stats.shieldTimer = Math.max(0, this.stats.shieldTimer - 1);
-        } else {
-          enemy.alive = false;
-          this.stats.lives -= damage > 1.5 ? 2 : 1;
-          this.screenShake = 0.35;
-        }
+        enemy.alive = false;
+        this.waveEnemiesLeft = Math.max(0, this.waveEnemiesLeft - 1);
+        this.damagePlayer(damage);
       }
     }
 
@@ -402,8 +392,7 @@ export class ShooterGame extends GameEngine {
     const shakeY = this.screenShake > 0 ? (Math.random() - 0.5) * this.screenShake * 8 : 0;
     ctx.save();
     ctx.translate(shakeX, shakeY);
-    if (this.scene.player)
-      drawPlayer(ctx, this.scene.player, this.palette, true, this.config.character);
+    if (this.scene.player) drawPlayer(ctx, this.scene.player, this.palette, true, this.config.character);
     for (const enemy of this.scene.enemies) {
       if (enemy === this.boss) drawBoss(ctx, enemy, this.palette, this.config.boss.type);
       else drawEnemy(ctx, enemy, this.palette, enemy.enemyKind ?? this.config.enemyType);
