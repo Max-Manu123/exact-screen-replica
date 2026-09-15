@@ -2,6 +2,8 @@ import { detectGameType } from "./GameTypeDetector";
 import { applyAnswers, buildQuestions, type Answers, type Question } from "./QuestionEngine";
 import { designLevel } from "./LevelDesignEngine";
 import { mapPrompt, suggestName } from "./SemanticMapper";
+import { semanticToGameSpec } from "./SemanticToGameSpec";
+import { gameSpecToConfig } from "./GameSpecToConfig";
 import type { GameConfig, GameHooks, GameType } from "./types";
 import { GameEngine } from "./GameEngine";
 import { CoinCollectorGame } from "./templates/CoinCollectorGame";
@@ -70,13 +72,17 @@ export async function generateGame(
   onStep?.(1);
   await wait();
 
-  // 3. Semantic mapping (+ answers from the question step) → structured configuration
+  // 3. Semantic mapping (+ answers from the question step)
   const mapped = applyAnswers(mapPrompt(clean, detection.type), answers);
   onStep?.(2);
   await wait();
 
-  // 4. Level design + validation
-  const config = designLevel(mapped);
+  // 4. Legacy level design remains the compatibility/validation layer.
+  // The richer GameSpec is then compiled into that config without replacing
+  // the existing templates or Canvas engine.
+  const legacyConfig = designLevel(mapped);
+  const gameSpec = semanticToGameSpec(mapped);
+  const config = gameSpecToConfig(gameSpec, legacyConfig);
   onStep?.(3);
   await wait();
 
