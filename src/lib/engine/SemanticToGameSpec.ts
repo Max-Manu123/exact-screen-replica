@@ -2,6 +2,8 @@ import type { SemanticResult } from "./SemanticMapper";
 import type { EnemyType, GameType } from "./types";
 import type { EnemySpec, GameSpec } from "./GameSpec";
 
+type BossSpec = NonNullable<GameSpec["boss"]>;
+
 /**
  * Converts the existing semantic parser output into the richer GameSpec layer.
  *
@@ -146,7 +148,7 @@ function progressionFor(result: SemanticResult): number {
   return result.pacing === "fast" ? 1.2 : 1;
 }
 
-function bossFor(result: SemanticResult): GameSpec["boss"]["type"] {
+function bossFor(result: SemanticResult): BossSpec["type"] {
   const primary = result.enemyType ?? result.allEnemyTypes[0];
   switch (primary) {
     case "robot": return "giant_robot";
