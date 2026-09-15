@@ -121,6 +121,7 @@ function createEnemySpec(type: EnemyType, result: SemanticResult, index: number)
   const speedMultiplier = aggressive ? 1.12 : 1;
 
   return {
+    type,
     ...base,
     speed: base.speed * speedMultiplier,
     damage: base.damage * (aggressive ? 1.15 : 1),

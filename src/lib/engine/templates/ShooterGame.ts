@@ -136,7 +136,7 @@ export class ShooterGame extends GameEngine {
         vy: pos.vy * stats.speedMult,
         cooldown: intent?.attackCooldown ?? 2,
         enemyKind,
-        variant: behaviorFor(this.config, enemyKind),
+        behavior: behaviorFor(this.config, enemyKind),
       });
       this.scene.enemies.push(enemy);
     }
@@ -145,7 +145,7 @@ export class ShooterGame extends GameEngine {
 
   private spawnBoss() {
     const bossSize = 80;
-    const boss = Scene.entity(this.width / 2 - bossSize / 2, 40, bossSize, bossSize, { hp: this.config.boss.health, vx: 30, vy: 20, enemyKind: this.config.enemyType, variant: "boss" });
+    const boss = Scene.entity(this.width / 2 - bossSize / 2, 40, bossSize, bossSize, { hp: this.config.boss.health, vx: 30, vy: 20, enemyKind: this.config.enemyType, behavior: "boss" });
     this.boss = boss;
     this.scene.enemies.push(boss);
   }
@@ -378,23 +378,25 @@ export class ShooterGame extends GameEngine {
       this.stats.wave += 1;
       this.spawnWave();
     } else if (this.waveEnemiesLeft <= 0 && !this.boss && this.stats.wave >= this.stats.waves) {
-      this.finishLevel(true);
+      this.completeLevel();
     }
   }
 
-  protected renderWorld(ctx: CanvasRenderingContext2D): void {
+  protected renderWorld(): void {
+    const ctx = this.ctx;
     const shakeX = this.screenShake > 0 ? (Math.random() - 0.5) * this.screenShake * 8 : 0;
     const shakeY = this.screenShake > 0 ? (Math.random() - 0.5) * this.screenShake * 8 : 0;
     ctx.save();
     ctx.translate(shakeX, shakeY);
-    if (this.scene.player) drawPlayer(ctx, this.scene.player, this.config);
+    if (this.scene.player)
+      drawPlayer(ctx, this.scene.player, this.palette, true, this.config.character);
     for (const enemy of this.scene.enemies) {
-      if (enemy === this.boss) drawBoss(ctx, enemy, this.config);
-      else drawEnemy(ctx, enemy, this.config);
+      if (enemy === this.boss) drawBoss(ctx, enemy, this.palette, this.config.boss.type);
+      else drawEnemy(ctx, enemy, this.palette, enemy.enemyKind ?? this.config.enemyType);
     }
-    for (const bullet of this.scene.bullets) drawBullet(ctx, bullet, this.config);
-    for (const bullet of this.scene.enemyBullets) drawBullet(ctx, bullet, this.config);
-    for (const powerUp of this.scene.powerUps) drawPowerUp(ctx, powerUp, this.config);
+    for (const bullet of this.scene.bullets) drawBullet(ctx, bullet, this.palette);
+    for (const bullet of this.scene.enemyBullets) drawBullet(ctx, bullet, this.palette);
+    for (const powerUp of this.scene.powerUps) drawPowerUp(ctx, powerUp, this.palette, this.elapsed);
     ctx.restore();
     for (const popup of this.scorePopups) {
       ctx.save();
