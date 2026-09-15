@@ -136,7 +136,7 @@ export class ShooterGame extends GameEngine {
         vy: pos.vy * stats.speedMult,
         cooldown: intent?.attackCooldown ?? 2,
         enemyKind,
-        variant: behaviorFor(this.config, enemyKind),
+        behavior: behaviorFor(this.config, enemyKind),
       });
       this.scene.enemies.push(enemy);
     }
