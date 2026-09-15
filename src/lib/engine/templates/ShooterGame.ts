@@ -134,6 +134,7 @@ export class ShooterGame extends GameEngine {
         hp: intent?.health ?? stats.hp,
         vx: pos.vx * stats.speedMult,
         vy: pos.vy * stats.speedMult,
+        cooldown: intent?.attackCooldown ?? 2,
         enemyKind,
         variant: behaviorFor(this.config, enemyKind),
       });
@@ -158,7 +159,7 @@ export class ShooterGame extends GameEngine {
 
     const speed = speedFor(this.config);
     const axis = this.axis();
-    let speedMult = this.stats.speedBoost ? 1.5 : 1;
+    const speedMult = this.stats.speedBoost ? 1.5 : 1;
     player.x += axis.x * speed * speedMult * dt;
     player.y += axis.y * speed * 0.5 * dt;
     this.clampToBoard(player);
@@ -218,6 +219,25 @@ export class ShooterGame extends GameEngine {
       if (bullet.y + bullet.h < 0 || bullet.x < -50 || bullet.x > this.width + 50) bullet.alive = false;
     }
 
+    for (const enemyBullet of this.scene.enemyBullets) {
+      enemyBullet.x += enemyBullet.vx * dt;
+      enemyBullet.y += enemyBullet.vy * dt;
+      if (enemyBullet.y < -40 || enemyBullet.y > this.height + 40 || enemyBullet.x < -40 || enemyBullet.x > this.width + 40) {
+        enemyBullet.alive = false;
+      }
+      if (enemyBullet.alive && rectsOverlap(enemyBullet, player)) {
+        enemyBullet.alive = false;
+        const damage = enemyBullet.damage ?? 1;
+        if (this.stats.shielded) {
+          this.stats.shieldTimer = Math.max(0, this.stats.shieldTimer - 1);
+        } else {
+          this.stats.lives -= damage > 1.5 ? 2 : 1;
+          this.screenShake = Math.max(this.screenShake, 0.25);
+        }
+      }
+    }
+    this.scene.enemyBullets = this.scene.enemyBullets.filter((b) => b.alive);
+
     for (const enemy of this.scene.enemies) {
       const enemyKind = enemy.enemyKind ?? this.config.enemyType;
       const behavior = behaviorFor(this.config, enemyKind);
@@ -259,11 +279,23 @@ export class ShooterGame extends GameEngine {
             if (distance < 170) {
               enemy.vx -= (dx / distance) * 45 * dt;
               enemy.vy -= (dy / distance) * 25 * dt;
-            } else if (distance > 260) {
+            } else if (distance > 300) {
               enemy.vx += (dx / distance) * 25 * dt;
               enemy.vy += (dy / distance) * 15 * dt;
             }
             enemy.vx += Math.sin(enemy.y * 0.025) * 22 * dt;
+
+            enemy.cooldown = (enemy.cooldown ?? intent?.attackCooldown ?? 2) - dt;
+            const attackRange = 150 + Math.min(250, enemySpeed * 100);
+            if (enemy.cooldown <= 0 && distance >= 150 && distance <= attackRange) {
+              const bulletSpeed = 190 + Math.min(70, enemySpeed * 30);
+              const bullet = Scene.entity(enemy.x + enemy.w / 2 - 4, enemy.y + enemy.h / 2 - 4, 8, 8);
+              bullet.vx = (dx / distance) * bulletSpeed;
+              bullet.vy = (dy / distance) * bulletSpeed;
+              bullet.damage = Math.max(0.5, intent?.damage ?? 1);
+              this.scene.enemyBullets.push(bullet);
+              enemy.cooldown = Math.max(0.9, intent?.attackCooldown ?? 2);
+            }
             break;
           }
           case "strafe": {
@@ -361,6 +393,7 @@ export class ShooterGame extends GameEngine {
       else drawEnemy(ctx, enemy, this.config);
     }
     for (const bullet of this.scene.bullets) drawBullet(ctx, bullet, this.config);
+    for (const bullet of this.scene.enemyBullets) drawBullet(ctx, bullet, this.config);
     for (const powerUp of this.scene.powerUps) drawPowerUp(ctx, powerUp, this.config);
     ctx.restore();
     for (const popup of this.scorePopups) {
