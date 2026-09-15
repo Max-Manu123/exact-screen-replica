@@ -129,6 +129,9 @@ function createEnemySpec(type: EnemyType, result: SemanticResult, index: number)
 }
 
 function spawnPatternFor(result: SemanticResult): GameSpec["encounter"]["spawnPattern"] {
+  // Slow/sniper-style encounters should give the player time to read the field
+  // instead of spawning enemies from both sides immediately.
+  if (result.pacing === "slow") return "cluster";
   if (result.pacing === "fast") return "stream";
   if (result.allEnemyTypes.length >= 2) return "cluster";
   if (result.intensity === "high") return "wave";
