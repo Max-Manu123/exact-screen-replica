@@ -26,6 +26,29 @@ export type EncounterStyle =
 export type SpawnPattern = "grid" | "wave" | "stream" | "spread" | "cluster";
 export type CollectiblePattern = "scatter" | "cluster" | "trail" | "risk_reward" | "spread";
 
+/** Rich intent retained on GameConfig so templates can adopt GameSpec incrementally. */
+export interface GameIntent {
+  combat?: {
+    weapon: WeaponType;
+    damage: number;
+    fireRate: number;
+    projectileSpeed: number;
+    spread: number;
+    precision: number;
+  };
+  enemies: Array<{
+    type: EnemyType;
+    behavior: "chase" | "patrol" | "strafe" | "ranged" | "swarm" | "charge";
+    health: number;
+    speed: number;
+    damage: number;
+    attackCooldown: number;
+  }>;
+  pacing: "slow" | "normal" | "fast";
+  aggression: number;
+  seed: number;
+}
+
 /** Structured, serialisable game description. Games are rebuilt from template + config. */
 export interface GameConfig {
   // ── Core Game Identity (what the game IS) ──
@@ -82,6 +105,9 @@ export interface GameConfig {
   collectiblePattern: CollectiblePattern;
   /** Whether the game starts with immediate action. */
   immediateStart: boolean;
+
+  /** Rich prompt-derived intent used by templates for behaviour and combat. */
+  gameIntent?: GameIntent;
 
   // ── Determinism Seed ──
   /** Seed for deterministic generation (derived from prompt + identity). */
