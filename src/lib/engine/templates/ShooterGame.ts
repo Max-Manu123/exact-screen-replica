@@ -53,7 +53,7 @@ function formationForWave(
       const clusterIdx = Math.floor(i / 4);
       const within = i % 4;
       const cx = (width / (clusters + 1)) * (clusterIdx + 1);
-      positions.push({ x: cx + (within % 2) * 40 - 20, y: 30 + Math.floor(within / 2) * 40 + clusterIdx * 20, vx: (20 + Math.random() * 30) * (Math.random() > 0.5 ? 1 : -1) * ramp, vy: (15 + Math.random() * 20) * ramp });
+      positions.push({ x: cx + (within % 2) * 40 - 20, y: -100 - clusterIdx * 70 - Math.floor(within / 2) * 45, vx: (20 + Math.random() * 30) * (Math.random() > 0.5 ? 1 : -1) * ramp, vy: (15 + Math.random() * 20) * ramp });
     }
   } else if (style === "mixed") {
     const sideCount = Math.floor(count / 3);
@@ -137,6 +137,11 @@ export class ShooterGame extends GameEngine {
         cooldown: intent?.attackCooldown ?? 2,
         enemyKind,
         behavior: behaviorFor(this.config, enemyKind),
+        spawnDelay: this.config.gameIntent?.pacing === "slow"
+          ? 1.8
+          : this.config.gameIntent?.pacing === "fast"
+            ? 0.8
+            : 1.2,
       });
       this.scene.enemies.push(enemy);
     }
@@ -239,6 +244,15 @@ export class ShooterGame extends GameEngine {
     this.scene.enemyBullets = this.scene.enemyBullets.filter((b) => b.alive);
 
     for (const enemy of this.scene.enemies) {
+      if (enemy.spawnDelay !== undefined && enemy.spawnDelay > 0) {
+        enemy.spawnDelay -= dt;
+        if (enemy.spawnDelay > 0) {
+          enemy.vx *= 0.96;
+          enemy.vy *= 0.96;
+          continue;
+        }
+      }
+
       const enemyKind = enemy.enemyKind ?? this.config.enemyType;
       const behavior = behaviorFor(this.config, enemyKind);
       const intent = intentStatsFor(this.config, enemyKind);
