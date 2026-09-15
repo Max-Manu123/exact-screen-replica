@@ -157,6 +157,8 @@ export interface Entity {
   powerUpType?: PowerUpType;
   /** Visual variant index for enemy composition. */
   variant?: number;
+  /** Enemy behaviour label used by the shooter template. */
+  behavior?: "chase" | "patrol" | "strafe" | "ranged" | "swarm" | "charge" | "boss";
   /** Whether this entity should render with a specific enemy type. */
   enemyKind?: EnemyType;
   /** Hit flash timer for feedback. */
