@@ -18,6 +18,16 @@ const ENEMY_STATS: Record<EnemyType, { hp: number; speedMult: number; sizeMult: 
   monster: { hp: 2, speedMult: 0.7, sizeMult: 1.3, scoreMult: 1.8 },
 };
 
+type EnemyBehavior = NonNullable<GameConfig["gameIntent"]>["enemies"][number]["behavior"];
+
+function behaviorFor(config: GameConfig, enemyKind: EnemyType): EnemyBehavior {
+  return config.gameIntent?.enemies.find((enemy) => enemy.type === enemyKind)?.behavior ?? "chase";
+}
+
+function intentStatsFor(config: GameConfig, enemyKind: EnemyType) {
+  return config.gameIntent?.enemies.find((enemy) => enemy.type === enemyKind);
+}
+
 /** Encounter formation patterns per wave. */
 function formationForWave(
   config: GameConfig,
@@ -31,99 +41,51 @@ function formationForWave(
   const ramp = progression(config, 1, 0) * config.aggression;
 
   if (pattern === "stream") {
-    // Rush: enemies come in a stream from the top
-    for (let i = 0; i < count; i++) {
-      positions.push({
-        x: 20 + Math.random() * Math.max(1, width - 60),
-        y: -30 - i * 50,
-        vx: (30 + Math.random() * 30) * (Math.random() > 0.5 ? 1 : -1) * ramp,
-        vy: (60 + Math.random() * 40) * ramp,
-      });
-    }
+    for (let i = 0; i < count; i++) positions.push({ x: 20 + Math.random() * Math.max(1, width - 60), y: -30 - i * 50, vx: (30 + Math.random() * 30) * (Math.random() > 0.5 ? 1 : -1) * ramp, vy: (60 + Math.random() * 40) * ramp });
   } else if (pattern === "spread") {
-    // Side pressure: enemies come from sides
     for (let i = 0; i < count; i++) {
       const fromLeft = i % 2 === 0;
-      positions.push({
-        x: fromLeft ? -30 : width + 10,
-        y: 30 + (i / count) * 200,
-        vx: (fromLeft ? 1 : -1) * (50 + Math.random() * 40) * ramp,
-        vy: (20 + Math.random() * 30) * ramp,
-      });
+      positions.push({ x: fromLeft ? -30 : width + 10, y: 30 + (i / count) * 200, vx: (fromLeft ? 1 : -1) * (50 + Math.random() * 40) * ramp, vy: (20 + Math.random() * 30) * ramp });
     }
   } else if (pattern === "cluster") {
-    // Elite: tight clusters
     const clusters = Math.max(1, Math.ceil(count / 4));
     for (let i = 0; i < count; i++) {
       const clusterIdx = Math.floor(i / 4);
       const within = i % 4;
       const cx = (width / (clusters + 1)) * (clusterIdx + 1);
-      positions.push({
-        x: cx + (within % 2) * 40 - 20,
-        y: 30 + Math.floor(within / 2) * 40 + clusterIdx * 20,
-        vx: (20 + Math.random() * 30) * (Math.random() > 0.5 ? 1 : -1) * ramp,
-        vy: (15 + Math.random() * 20) * ramp,
-      });
+      positions.push({ x: cx + (within % 2) * 40 - 20, y: 30 + Math.floor(within / 2) * 40 + clusterIdx * 20, vx: (20 + Math.random() * 30) * (Math.random() > 0.5 ? 1 : -1) * ramp, vy: (15 + Math.random() * 20) * ramp });
     }
   } else if (style === "mixed") {
-    // Mixed: some from top, some from sides
     const sideCount = Math.floor(count / 3);
     const topCount = count - sideCount;
     for (let i = 0; i < topCount; i++) {
-      const col = i % Math.max(3, Math.ceil(Math.sqrt(topCount)));
-      const row = Math.floor(i / Math.max(3, Math.ceil(Math.sqrt(topCount))));
-      positions.push({
-        x: 20 + col * Math.max(50, (width - 40) / Math.max(3, Math.ceil(Math.sqrt(topCount)))),
-        y: 30 + row * 46,
-        vx: (40 + Math.random() * 40) * (Math.random() > 0.5 ? 1 : -1) * ramp,
-        vy: (12 + Math.random() * 14) * ramp,
-      });
+      const cols = Math.max(3, Math.ceil(Math.sqrt(topCount)));
+      positions.push({ x: 20 + (i % cols) * Math.max(50, (width - 40) / cols), y: 30 + Math.floor(i / cols) * 46, vx: (40 + Math.random() * 40) * (Math.random() > 0.5 ? 1 : -1) * ramp, vy: (12 + Math.random() * 14) * ramp });
     }
     for (let i = 0; i < sideCount; i++) {
       const fromLeft = i % 2 === 0;
-      positions.push({
-        x: fromLeft ? -30 : width + 10,
-        y: 60 + i * 60,
-        vx: (fromLeft ? 1 : -1) * (45 + Math.random() * 30) * ramp,
-        vy: (15 + Math.random() * 20) * ramp,
-      });
+      positions.push({ x: fromLeft ? -30 : width + 10, y: 60 + i * 60, vx: (fromLeft ? 1 : -1) * (45 + Math.random() * 30) * ramp, vy: (15 + Math.random() * 20) * ramp });
     }
   } else {
-    // Grid (balanced/default)
     const perRow = Math.max(3, Math.min(8, Math.ceil(Math.sqrt(count) + 1)));
     for (let i = 0; i < count; i++) {
       const col = i % perRow;
       const row = Math.floor(i / perRow);
       const spacing = Math.max(50, (width - 40) / perRow);
-      positions.push({
-        x: 20 + col * spacing,
-        y: 30 + row * 46,
-        vx: (40 + Math.random() * 40) * (Math.random() > 0.5 ? 1 : -1) * ramp,
-        vy: (12 + Math.random() * 14) * ramp,
-      });
+      positions.push({ x: 20 + col * spacing, y: 30 + row * 46, vx: (40 + Math.random() * 40) * (Math.random() > 0.5 ? 1 : -1) * ramp, vy: (12 + Math.random() * 14) * ramp });
     }
   }
-
   return positions;
 }
 
-/** Pick enemy type for a given slot, respecting composition. */
 function pickEnemyType(config: GameConfig, index: number, total: number): EnemyType {
   const primary = config.enemyType;
   const mix = config.enemyMix;
-
   if (mix.length === 0) return primary;
-
-  // 70-85% primary, 15-30% complementary
-  const primaryRatio = 0.78;
-  const isPrimary = index / total < primaryRatio;
-  if (isPrimary) return primary;
-
-  // Pick from mix deterministically
+  if (index / total < 0.78) return primary;
   return mix[index % mix.length]!;
 }
 
-/** Vertical shooter: clear every wave of enemies to finish the level. */
 export class ShooterGame extends GameEngine {
   private fireCooldown = 0;
   private waveEnemiesLeft = 0;
@@ -142,7 +104,7 @@ export class ShooterGame extends GameEngine {
     this.stats.wave = 1;
     this.stats.coinsTotal = this.config.enemies * this.config.waves;
     this.fireCooldown = 0;
-    this.powerUpSpawnTimer = 4; // First power-up at ~4 seconds
+    this.powerUpSpawnTimer = 4;
     this.boss = null;
     this.screenShake = 0;
     this.hitFlashes = [];
@@ -159,22 +121,21 @@ export class ShooterGame extends GameEngine {
       this.waveEnemiesLeft = 1;
       return;
     }
-
     const count = enemiesForWave(this.config, this.stats.wave);
     const positions = formationForWave(this.config, this.stats.wave, count, this.width);
-
     for (let i = 0; i < count; i += 1) {
       const pos = positions[i] ?? positions[0]!;
       const enemyKind = pickEnemyType(this.config, i, count);
       const stats = ENEMY_STATS[enemyKind];
+      const intent = intentStatsFor(this.config, enemyKind);
       const w = 30 * stats.sizeMult;
       const h = 26 * stats.sizeMult;
-
       const enemy = Scene.entity(pos.x, pos.y, w, h, {
-        hp: stats.hp,
+        hp: intent?.health ?? stats.hp,
         vx: pos.vx * stats.speedMult,
         vy: pos.vy * stats.speedMult,
         enemyKind,
+        variant: behaviorFor(this.config, enemyKind),
       });
       this.scene.enemies.push(enemy);
     }
@@ -183,13 +144,7 @@ export class ShooterGame extends GameEngine {
 
   private spawnBoss() {
     const bossSize = 80;
-    const boss = Scene.entity(
-      this.width / 2 - bossSize / 2,
-      40,
-      bossSize,
-      bossSize,
-      { hp: this.config.boss.health, vx: 30, vy: 20, enemyKind: this.config.enemyType },
-    );
+    const boss = Scene.entity(this.width / 2 - bossSize / 2, 40, bossSize, bossSize, { hp: this.config.boss.health, vx: 30, vy: 20, enemyKind: this.config.enemyType, variant: "boss" });
     this.boss = boss;
     this.scene.enemies.push(boss);
   }
@@ -197,113 +152,62 @@ export class ShooterGame extends GameEngine {
   protected updateWorld(dt: number): void {
     const player = this.scene.player;
     if (!player) return;
-
-    // Screen shake decay
     if (this.screenShake > 0) this.screenShake = Math.max(0, this.screenShake - dt * 3);
-
-    // Update hit flashes
-    this.hitFlashes = this.hitFlashes.filter((f) => {
-      f.t -= dt;
-      return f.t > 0;
-    });
-
-    // Update score popups
-    this.scorePopups = this.scorePopups.filter((p) => {
-      p.y += p.vy * dt;
-      p.t -= dt;
-      return p.t > 0;
-    });
+    this.hitFlashes = this.hitFlashes.filter((f) => { f.t -= dt; return f.t > 0; });
+    this.scorePopups = this.scorePopups.filter((p) => { p.y += p.vy * dt; p.t -= dt; return p.t > 0; });
 
     const speed = speedFor(this.config);
     const axis = this.axis();
-    let speedMult = 1;
-    if (this.stats.speedBoost) speedMult = 1.5;
+    let speedMult = this.stats.speedBoost ? 1.5 : 1;
     player.x += axis.x * speed * speedMult * dt;
     player.y += axis.y * speed * 0.5 * dt;
     this.clampToBoard(player);
 
-    // Update power-up timers
-    if (this.stats.shielded) {
-      this.stats.shieldTimer -= dt;
-      if (this.stats.shieldTimer <= 0) this.stats.shielded = false;
-    }
-    if (this.stats.speedBoost) {
-      this.stats.speedTimer -= dt;
-      if (this.stats.speedTimer <= 0) this.stats.speedBoost = false;
-    }
-    if (this.stats.doubleScore) {
-      this.stats.doubleScoreTimer -= dt;
-      if (this.stats.doubleScoreTimer <= 0) this.stats.doubleScore = false;
-    }
+    if (this.stats.shielded) { this.stats.shieldTimer -= dt; if (this.stats.shieldTimer <= 0) this.stats.shielded = false; }
+    if (this.stats.speedBoost) { this.stats.speedTimer -= dt; if (this.stats.speedTimer <= 0) this.stats.speedBoost = false; }
+    if (this.stats.doubleScore) { this.stats.doubleScoreTimer -= dt; if (this.stats.doubleScoreTimer <= 0) this.stats.doubleScore = false; }
 
-    // Track player performance for power-up pacing
-    if (this.stats.lives <= 1 && !this.lowHealthTriggered) {
-      this.lowHealthTriggered = true;
-      // Player struggling - spawn a shield/health soon
-      this.powerUpSpawnTimer = Math.min(this.powerUpSpawnTimer, 2);
-    }
+    if (this.stats.lives <= 1 && !this.lowHealthTriggered) { this.lowHealthTriggered = true; this.powerUpSpawnTimer = Math.min(this.powerUpSpawnTimer, 2); }
     if (this.stats.lives > 2) {
       this.doingWellTimer += dt;
-      if (this.doingWellTimer > 15 && !this.stats.doubleScore) {
-        // Player doing well - offer double score
-        this.powerUpSpawnTimer = Math.min(this.powerUpSpawnTimer, 2);
-        this.doingWellTimer = 0;
-      }
+      if (this.doingWellTimer > 15 && !this.stats.doubleScore) { this.powerUpSpawnTimer = Math.min(this.powerUpSpawnTimer, 2); this.doingWellTimer = 0; }
     }
 
-    // Spawn power-ups with pacing
     if (this.config.powerUps.length > 0) {
       this.powerUpSpawnTimer -= dt;
       if (this.powerUpSpawnTimer <= 0) {
         this.powerUpSpawnTimer = 8 + Math.random() * 4;
-        // Pick contextually appropriate power-up
         let type = this.config.powerUps[Math.floor(Math.random() * this.config.powerUps.length)]!;
         if (this.stats.lives <= 1 && this.config.powerUps.includes("health")) type = "health";
         else if (this.stats.lives <= 1 && this.config.powerUps.includes("shield")) type = "shield";
         else if (this.doingWellTimer > 10 && this.config.powerUps.includes("double_score")) type = "double_score";
-
-        const powerUp = Scene.entity(
-          20 + Math.random() * (this.width - 40),
-          -20,
-          16,
-          16,
-          { powerUpType: type, vy: 60 },
-        );
-        this.scene.powerUps.push(powerUp);
+        this.scene.powerUps.push(Scene.entity(20 + Math.random() * (this.width - 40), -20, 16, 16, { powerUpType: type, vy: 60 }));
       }
     }
 
-    // Update power-ups
     for (const powerUp of this.scene.powerUps) {
       powerUp.y += (powerUp.vy ?? 60) * dt;
       if (powerUp.y > this.height + 20) powerUp.alive = false;
-
-      if (powerUp.alive && rectsOverlap(powerUp, player)) {
-        powerUp.alive = false;
-        this.applyPowerUp(powerUp.powerUpType ?? "health");
-      }
+      if (powerUp.alive && rectsOverlap(powerUp, player)) { powerUp.alive = false; this.applyPowerUp(powerUp.powerUpType ?? "health"); }
     }
     this.scene.powerUps = this.scene.powerUps.filter((p) => p.alive);
 
-    // Shooting
     this.fireCooldown -= dt;
     if (this.shootPressed() && this.fireCooldown <= 0) {
+      const intentCombat = this.config.gameIntent?.combat;
       const stats = WEAPON_STATS[this.config.weapon];
-      this.fireCooldown = stats.cooldown;
-
-      if (stats.spread) {
-        for (let i = 0; i < stats.spread; i++) {
-          const spreadAngle = (i - (stats.spread - 1) / 2) * 0.15;
-          const bullet = Scene.entity(player.x + player.w / 2 - 3, player.y - 10, 6, 14);
-          bullet.vy = -stats.bulletSpeed * Math.cos(spreadAngle);
-          bullet.vx = stats.bulletSpeed * Math.sin(spreadAngle);
-          bullet.damage = stats.damage;
-          this.scene.bullets.push(bullet);
-        }
-      } else {
+      const cooldown = intentCombat ? 1 / Math.max(0.2, intentCombat.fireRate) : stats.cooldown;
+      this.fireCooldown = cooldown;
+      const damage = intentCombat?.damage ?? stats.damage;
+      const bulletSpeed = intentCombat?.projectileSpeed ?? stats.bulletSpeed;
+      const spread = intentCombat?.spread ?? 0;
+      const pelletCount = this.config.weapon === "shotgun" ? 3 : 1;
+      for (let i = 0; i < pelletCount; i++) {
+        const offset = pelletCount === 1 ? 0 : (i - 1) * spread;
         const bullet = Scene.entity(player.x + player.w / 2 - 3, player.y - 10, 6, 14);
-        bullet.vy = -stats.bulletSpeed;
-        bullet.damage = stats.damage;
+        bullet.vy = -bulletSpeed;
+        bullet.vx = offset * bulletSpeed * 0.35;
+        bullet.damage = damage;
         this.scene.bullets.push(bullet);
       }
     }
@@ -311,44 +215,101 @@ export class ShooterGame extends GameEngine {
     for (const bullet of this.scene.bullets) {
       bullet.x += (bullet.vx ?? 0) * dt;
       bullet.y += bullet.vy * dt;
-      if (bullet.y + bullet.h < 0) bullet.alive = false;
+      if (bullet.y + bullet.h < 0 || bullet.x < -50 || bullet.x > this.width + 50) bullet.alive = false;
     }
 
     for (const enemy of this.scene.enemies) {
-      enemy.x += enemy.vx * dt;
-      enemy.y += enemy.vy * dt;
+      const enemyKind = enemy.enemyKind ?? this.config.enemyType;
+      const behavior = behaviorFor(this.config, enemyKind);
+      const intent = intentStatsFor(this.config, enemyKind);
+      const aggression = this.config.gameIntent?.aggression ?? this.config.aggression;
+      const enemySpeed = (intent?.speed ?? ENEMY_STATS[enemyKind].speedMult) * (0.8 + aggression * 0.2);
 
-      // Boss movement
-      if (enemy === this.boss) {
-        if (enemy.x <= 0 || enemy.x + enemy.w >= this.width) {
-          enemy.vx *= -1;
-          enemy.x = Math.max(0, Math.min(this.width - enemy.w, enemy.x));
+      if (enemy !== this.boss) {
+        switch (behavior) {
+          case "chase": {
+            const dx = player.x - enemy.x;
+            const dy = player.y - enemy.y;
+            const distance = Math.hypot(dx, dy) || 1;
+            enemy.vx += (dx / distance) * 55 * enemySpeed * dt;
+            enemy.vy += (dy / distance) * 35 * enemySpeed * dt;
+            break;
+          }
+          case "swarm": {
+            const dx = player.x - enemy.x;
+            const dy = player.y - enemy.y;
+            const distance = Math.hypot(dx, dy) || 1;
+            enemy.vx += (dx / distance) * 40 * enemySpeed * dt;
+            enemy.vy += (dy / distance) * 28 * enemySpeed * dt;
+            enemy.vx += Math.sin((enemy.x + enemy.y) * 0.02) * 18 * dt;
+            break;
+          }
+          case "charge": {
+            const dx = player.x - enemy.x;
+            const dy = player.y - enemy.y;
+            const distance = Math.hypot(dx, dy) || 1;
+            enemy.vx += (dx / distance) * 85 * enemySpeed * dt;
+            enemy.vy += (dy / distance) * 65 * enemySpeed * dt;
+            break;
+          }
+          case "ranged": {
+            const dx = player.x - enemy.x;
+            const dy = player.y - enemy.y;
+            const distance = Math.hypot(dx, dy) || 1;
+            if (distance < 170) {
+              enemy.vx -= (dx / distance) * 45 * dt;
+              enemy.vy -= (dy / distance) * 25 * dt;
+            } else if (distance > 260) {
+              enemy.vx += (dx / distance) * 25 * dt;
+              enemy.vy += (dy / distance) * 15 * dt;
+            }
+            enemy.vx += Math.sin(enemy.y * 0.025) * 22 * dt;
+            break;
+          }
+          case "strafe": {
+            const dx = player.x - enemy.x;
+            const dy = player.y - enemy.y;
+            const distance = Math.hypot(dx, dy) || 1;
+            enemy.vx += (dx / distance) * 20 * enemySpeed * dt;
+            enemy.vy += (dy / distance) * 18 * enemySpeed * dt;
+            enemy.vx += (-dy / distance) * 40 * enemySpeed * dt;
+            break;
+          }
+          case "patrol":
+          default:
+            break;
         }
-        if (enemy.y <= 20 || enemy.y >= this.height * 0.4) {
-          enemy.vy *= -1;
-          enemy.y = Math.max(20, Math.min(this.height * 0.4, enemy.y));
-        }
-      } else {
-        // Regular enemy movement
-        if (enemy.x <= 0 || enemy.x + enemy.w >= this.width) {
-          enemy.vx *= -1;
-          enemy.x = Math.max(0, Math.min(this.width - enemy.w, enemy.x));
+
+        const maxSpeed = 110 * enemySpeed;
+        const currentSpeed = Math.hypot(enemy.vx, enemy.vy);
+        if (currentSpeed > maxSpeed) {
+          const scale = maxSpeed / currentSpeed;
+          enemy.vx *= scale;
+          enemy.vy *= scale;
         }
       }
 
-      // Bullet collisions
+      enemy.x += enemy.vx * dt;
+      enemy.y += enemy.vy * dt;
+
+      if (enemy === this.boss) {
+        if (enemy.x <= 0 || enemy.x + enemy.w >= this.width) { enemy.vx *= -1; enemy.x = Math.max(0, Math.min(this.width - enemy.w, enemy.x)); }
+        if (enemy.y <= 20 || enemy.y >= this.height * 0.4) { enemy.vy *= -1; enemy.y = Math.max(20, Math.min(this.height * 0.4, enemy.y)); }
+      } else {
+        if (enemy.x <= 0 || enemy.x + enemy.w >= this.width) { enemy.vx *= -0.7; enemy.x = Math.max(0, Math.min(this.width - enemy.w, enemy.x)); }
+        if (enemy.y > this.height + 50) enemy.alive = false;
+      }
+
       for (const bullet of this.scene.bullets) {
         if (!bullet.alive || !enemy.alive) continue;
         if (rectsOverlap(bullet, enemy)) {
           bullet.alive = false;
-          const damage = bullet.damage ?? 1;
-          enemy.hp = (enemy.hp ?? 1) - damage;
+          enemy.hp = (enemy.hp ?? 1) - (bullet.damage ?? 1);
           enemy.hitFlash = 0.15;
-
           if ((enemy.hp ?? 0) <= 0) {
             enemy.alive = false;
-            const enemyKind = enemy.enemyKind ?? this.config.enemyType;
-            const stats = ENEMY_STATS[enemyKind];
+            const kind = enemy.enemyKind ?? this.config.enemyType;
+            const stats = ENEMY_STATS[kind];
             const reward = enemyReward();
             const scoreGain = this.stats.doubleScore ? reward.score * 2 : reward.score;
             const bossMultiplier = enemy === this.boss ? 5 : 1;
@@ -357,187 +318,68 @@ export class ShooterGame extends GameEngine {
             this.stats.xp += reward.xp * bossMultiplier;
             this.stats.coins += reward.coins * bossMultiplier;
             this.waveEnemiesLeft = Math.max(0, this.waveEnemiesLeft - 1);
-
-            // Visual feedback
             this.hitFlashes.push({ x: enemy.x + enemy.w / 2, y: enemy.y + enemy.h / 2, t: 0.3 });
-            this.scorePopups.push({
-              x: enemy.x + enemy.w / 2,
-              y: enemy.y,
-              text: `+${finalScore}`,
-              t: 0.8,
-              vy: -40,
-            });
-            if (enemy === this.boss) {
-              this.boss = null;
-              this.screenShake = 0.5;
-            } else {
-              this.screenShake = Math.max(this.screenShake, 0.1);
-            }
+            this.scorePopups.push({ x: enemy.x + enemy.w / 2, y: enemy.y, text: `+${finalScore}`, t: 0.8, vy: -40 });
+            if (enemy === this.boss) { this.boss = null; this.screenShake = 0.5; }
+            else this.screenShake = Math.max(this.screenShake, 0.1);
           }
         }
       }
 
-      // Player collision
       if (enemy.alive && rectsOverlap(enemy, player)) {
-        enemy.alive = false;
-        this.waveEnemiesLeft = Math.max(0, this.waveEnemiesLeft - 1);
-        this.screenShake = Math.max(this.screenShake, 0.2);
+        const damage = intent?.damage ?? 1;
         if (this.stats.shielded) {
-          this.stats.shielded = false;
-          this.stats.shieldTimer = 0;
+          enemy.alive = false;
+          this.stats.shieldTimer = Math.max(0, this.stats.shieldTimer - 1);
         } else {
-          this.stats.lives -= 1;
-          if (this.stats.lives <= 0) {
-            this.gameOver();
-            return;
-          }
-        }
-      }
-
-      // Regular enemies that reach bottom cost lives
-      if (enemy.alive && enemy !== this.boss && enemy.y > this.height) {
-        enemy.alive = false;
-        this.waveEnemiesLeft = Math.max(0, this.waveEnemiesLeft - 1);
-        this.stats.lives -= 1;
-        if (this.stats.lives <= 0) {
-          this.gameOver();
-          return;
+          enemy.alive = false;
+          this.stats.lives -= damage > 1.5 ? 2 : 1;
+          this.screenShake = 0.35;
         }
       }
     }
 
-    // Decay hit flash on enemies
-    for (const enemy of this.scene.enemies) {
-      if (enemy.hitFlash && enemy.hitFlash > 0) {
-        enemy.hitFlash -= dt;
-        if (enemy.hitFlash < 0) enemy.hitFlash = 0;
-      }
-    }
+    this.scene.enemies = this.scene.enemies.filter((e) => e.alive);
+    this.scene.bullets = this.scene.bullets.filter((b) => b.alive);
 
-    this.scene.bullets = this.scene.bullets.filter((bullet) => bullet.alive);
-    this.scene.enemies = this.scene.enemies.filter((enemy) => enemy.alive);
-
-    // Wave completion
-    if (this.scene.enemies.length === 0 && this.waveEnemiesLeft === 0) {
-      if (this.stats.wave < this.stats.waves) {
-        this.stats.wave += 1;
-        this.spawnWave();
-        this.emitStats();
-      } else {
-        this.completeLevel();
-      }
+    if (this.waveEnemiesLeft <= 0 && !this.boss && this.stats.wave < this.stats.waves) {
+      this.stats.wave += 1;
+      this.spawnWave();
+    } else if (this.waveEnemiesLeft <= 0 && !this.boss && this.stats.wave >= this.stats.waves) {
+      this.finishLevel(true);
     }
   }
 
-  private applyPowerUp(type: "health" | "shield" | "speed" | "double_score"): void {
-    switch (type) {
-      case "health":
-        this.stats.lives = Math.min(this.stats.lives + 1, 5);
-        break;
-      case "shield":
-        this.stats.shielded = true;
-        this.stats.shieldTimer = 5;
-        break;
-      case "speed":
-        this.stats.speedBoost = true;
-        this.stats.speedTimer = 8;
-        break;
-      case "double_score":
-        this.stats.doubleScore = true;
-        this.stats.doubleScoreTimer = 10;
-        break;
-    }
-  }
-
-  protected renderWorld(): void {
-    const ctx = this.ctx;
-
-    // Apply screen shake
-    if (this.screenShake > 0) {
-      const shake = this.screenShake * 6;
-      ctx.save();
-      ctx.translate(
-        (Math.random() - 0.5) * shake,
-        (Math.random() - 0.5) * shake,
-      );
-    }
-
-    for (const bullet of this.scene.bullets) drawBullet(ctx, bullet, this.palette);
+  protected renderWorld(ctx: CanvasRenderingContext2D): void {
+    const shakeX = this.screenShake > 0 ? (Math.random() - 0.5) * this.screenShake * 8 : 0;
+    const shakeY = this.screenShake > 0 ? (Math.random() - 0.5) * this.screenShake * 8 : 0;
+    ctx.save();
+    ctx.translate(shakeX, shakeY);
+    if (this.scene.player) drawPlayer(ctx, this.scene.player, this.config);
     for (const enemy of this.scene.enemies) {
-      if (enemy === this.boss) {
-        drawBoss(ctx, enemy, this.palette, this.config.boss.type);
-      } else {
-        const enemyKind = enemy.enemyKind ?? this.config.enemyType;
-        drawEnemy(ctx, enemy, this.palette, enemyKind);
-        // Hit flash overlay
-        if (enemy.hitFlash && enemy.hitFlash > 0) {
-          ctx.save();
-          ctx.globalAlpha = enemy.hitFlash * 3;
-          ctx.fillStyle = "#ffffff";
-          ctx.fillRect(enemy.x, enemy.y, enemy.w, enemy.h);
-          ctx.restore();
-        }
-      }
+      if (enemy === this.boss) drawBoss(ctx, enemy, this.config);
+      else drawEnemy(ctx, enemy, this.config);
     }
-    for (const powerUp of this.scene.powerUps) drawPowerUp(ctx, powerUp, this.palette, this.elapsed * 3);
-    if (this.scene.player) drawPlayer(ctx, this.scene.player, this.palette, true, this.config.character);
-
-    // Shield visual
-    if (this.stats.shielded && this.scene.player) {
-      const p = this.scene.player;
+    for (const bullet of this.scene.bullets) drawBullet(ctx, bullet, this.config);
+    for (const powerUp of this.scene.powerUps) drawPowerUp(ctx, powerUp, this.config);
+    ctx.restore();
+    for (const popup of this.scorePopups) {
       ctx.save();
-      ctx.globalAlpha = 0.3 + 0.2 * Math.sin(this.elapsed * 6);
-      ctx.strokeStyle = "#44aaff";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(p.x + p.w / 2, p.y + p.h / 2, p.w * 0.8, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    // Hit flash bursts
-    for (const f of this.hitFlashes) {
-      ctx.save();
-      ctx.globalAlpha = f.t * 2;
+      ctx.globalAlpha = Math.min(1, popup.t / 0.4);
       ctx.fillStyle = "#ffffff";
-      ctx.beginPath();
-      ctx.arc(f.x, f.y, 8 + (1 - f.t / 0.3) * 12, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
-
-    // Score popups
-    for (const p of this.scorePopups) {
-      ctx.save();
-      ctx.globalAlpha = Math.min(1, p.t / 0.8);
-      ctx.fillStyle = this.palette.hud;
-      ctx.font = "bold 14px system-ui, sans-serif";
+      ctx.font = "bold 14px sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText(p.text, p.x, p.y);
+      ctx.fillText(popup.text, popup.x, popup.y);
       ctx.restore();
     }
+  }
 
-    if (this.screenShake > 0) {
-      ctx.restore();
-    }
-
-    // Boss health bar
-    if (this.boss && this.boss.alive) {
-      const barWidth = 200;
-      const barHeight = 8;
-      const barX = this.width / 2 - barWidth / 2;
-      const barY = 15;
-      const healthPercent = Math.max(0, (this.boss.hp ?? 0) / this.config.boss.health);
-
-      ctx.save();
-      ctx.fillStyle = "#333333";
-      ctx.fillRect(barX, barY, barWidth, barHeight);
-      ctx.fillStyle = "#ff4444";
-      ctx.fillRect(barX, barY, barWidth * healthPercent, barHeight);
-      ctx.strokeStyle = "#ffffff";
-      ctx.lineWidth = 1;
-      ctx.strokeRect(barX, barY, barWidth, barHeight);
-      ctx.restore();
+  private applyPowerUp(type: string): void {
+    switch (type) {
+      case "health": this.stats.lives = Math.min(3, this.stats.lives + 1); break;
+      case "shield": this.stats.shielded = true; this.stats.shieldTimer = 6; break;
+      case "speed": this.stats.speedBoost = true; this.stats.speedTimer = 5; break;
+      case "double_score": this.stats.doubleScore = true; this.stats.doubleScoreTimer = 10; break;
     }
   }
 }
