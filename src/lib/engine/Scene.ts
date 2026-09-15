@@ -7,6 +7,7 @@ export class Scene {
   enemies: Entity[] = [];
   obstacles: Entity[] = [];
   bullets: Entity[] = [];
+  enemyBullets: Entity[] = [];
   powerUps: Entity[] = [];
 
   reset() {
@@ -15,6 +16,7 @@ export class Scene {
     this.enemies = [];
     this.obstacles = [];
     this.bullets = [];
+    this.enemyBullets = [];
     this.powerUps = [];
   }
 
